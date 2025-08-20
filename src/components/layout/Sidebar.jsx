@@ -1,0 +1,176 @@
+import React from 'react';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import HomeIcon from '@mui/icons-material/Home';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import TodayIcon from '@mui/icons-material/Today';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import GroupIcon from '@mui/icons-material/Group';
+import SettingsIcon from '@mui/icons-material/Settings';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+
+import logo from '../../assets/eco-logo-pro.png';
+import { useAuth } from '../../context/auth/AuthContext';
+
+const GREEN = '#2AAC26';
+
+
+
+const Sidebar = ({ onNavigate, current, user: userProp }) => {
+  const { user: authUser } = useAuth();
+  const user = userProp || authUser;
+  
+  if (!user) return null;
+  
+  // Define menu items based on user role
+  const getMenuItems = () => {
+    const baseItems = [
+      { label: 'Reportes', icon: <BarChartIcon />, key: 'reports' },
+      { label: 'Configuración', icon: <SettingsIcon />, key: 'settings' },
+      { label: 'Ayuda', icon: <HelpOutlineIcon />, key: 'help' },
+    ];
+    
+    switch (user.role) {
+      case 'Administrador':
+        return [
+          { label: 'Dashboard', icon: <HomeIcon />, key: 'admin-dashboard' },
+          { label: 'Gestión de Proyectos', icon: <FolderOpenIcon />, key: 'admin-projects' },
+          { label: 'Gestión de Usuarios', icon: <GroupIcon />, key: 'admin-users' },
+          { label: 'Tareas (Kanban)', icon: <AssignmentIcon />, key: 'admin-kanban' },
+          ...baseItems
+        ];
+      
+      case 'Coordinador':
+        return [
+          { label: 'Dashboard', icon: <HomeIcon />, key: 'coordinator-dashboard' },
+          { label: 'Mis Proyectos', icon: <FolderOpenIcon />, key: 'coordinator-projects' },
+          { label: 'Tareas (Kanban)', icon: <AssignmentIcon />, key: 'coordinator-kanban' },
+          { label: 'Métricas', icon: <BarChartIcon />, key: 'coordinator-metrics' },
+          { label: 'Participantes', icon: <GroupIcon />, key: 'coordinator-participants' },
+          ...baseItems
+        ];
+      
+      case 'Participante':
+        return [
+          { label: 'Dashboard', icon: <HomeIcon />, key: 'participant-dashboard' },
+          { label: 'Mis Tareas (Kanban)', icon: <AssignmentIcon />, key: 'participant-kanban' },
+          { label: 'Mis Proyectos', icon: <FolderOpenIcon />, key: 'participant-projects' },
+          ...baseItems
+        ];
+      
+      default:
+        // Legacy menu items for backward compatibility
+        return [
+          { label: 'Inicio', icon: <HomeIcon />, key: 'home' },
+          { label: 'Proyectos', icon: <FolderOpenIcon />, key: 'projects' },
+          { label: 'Tarea de hoy', icon: <TodayIcon />, key: 'tasks' },
+          { label: 'Todas las tareas', icon: <ListAltIcon />, key: 'alltasks' },
+          { label: 'Calendario', icon: <CalendarMonthIcon />, key: 'calendar' },
+          { label: 'Reportes', icon: <BarChartIcon />, key: 'reports' },
+          { label: 'Participantes', icon: <GroupIcon />, key: 'participants' },
+          ...baseItems
+        ];
+    }
+  };
+  
+  const menuItems = getMenuItems();
+
+  return (
+    <Drawer 
+      variant="permanent" 
+      anchor="left" 
+      sx={{ 
+        width: 260, 
+        flexShrink: 0, 
+        '& .MuiDrawer-paper': { 
+          width: 260, 
+          boxSizing: 'border-box', 
+          borderRight: '1px solid #f0f0f0', 
+          pt: 2, 
+          fontFamily: 'Poppins, sans-serif', 
+          background: '#fff' 
+        } 
+      }}
+    >
+      {/* Logo y nombre */}
+      <Box sx={{ display: 'flex', alignItems: 'center', px: 2, mb: 2 }}>
+        <img src={logo} alt="Logo" style={{ width: 32, height: 32, marginRight: 10 }} />
+        <span style={{ fontWeight: 700, color: '#111', fontSize: 22, fontFamily: 'Poppins, sans-serif', letterSpacing: 0.5 }}>
+          ECO
+        </span>
+      </Box>
+      
+      {/* User Info */}
+      <Box sx={{ px: 2, mb: 3, pt: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 2, borderRadius: 2, bgcolor: '#f8f9fa' }}>
+          <Box sx={{ 
+            width: 8, 
+            height: 8, 
+            borderRadius: '50%', 
+            bgcolor: '#44b883', 
+            mr: 1 
+          }} />
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif', fontSize: 13 }}>
+              {user.name}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+              {user.role}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box sx={{ color: '#8B8B8B', fontSize: 13, fontWeight: 600, letterSpacing: 0.5, px: 2, mb: 1, fontFamily: 'Poppins, sans-serif' }}>
+        MENU
+      </Box>
+      
+      <List>
+        {menuItems.map((item) => (
+          <ListItem key={item.key} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              selected={current === item.key}
+              onClick={() => onNavigate(item.key)}
+              sx={{
+                borderRadius: 2,
+                mx: 1,
+                height: 40,
+                background: current === item.key ? GREEN : 'transparent',
+                color: current === item.key ? '#fff' : '#222',
+                fontWeight: current === item.key ? 700 : 500,
+                fontFamily: 'Poppins, sans-serif',
+                '&:hover': {
+                  background: current === item.key ? GREEN : '#f5f6fa',
+                },
+                transition: 'background 0.2s',
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36, color: current === item.key ? '#ffffff' : '#8B8B8B', opacity: current === item.key ? 0.95 : 1 }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={item.label} 
+                primaryTypographyProps={{ 
+                  fontWeight: current === item.key ? 700 : 500, 
+                  fontSize: 15, 
+                  fontFamily: 'Poppins, sans-serif' 
+                }} 
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Drawer>
+  );
+};
+
+export default Sidebar;
