@@ -28,6 +28,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import dataService from '../../utils/dataService';
 
 const GREEN = '#2AAC26';
@@ -279,7 +280,7 @@ const AdminProjects = ({ onNavigate }) => {
           const participants = getProjectParticipants(project.id);
 
           return (
-            <Grid item xs={12} md={6} lg={4} key={project.id}>
+            <Grid item size={{ xs: 12, md: 6, lg: 4 }} key={project.id}>
               <Card 
                 sx={{ 
                   borderRadius: 3, 
@@ -319,8 +320,17 @@ const AdminProjects = ({ onNavigate }) => {
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton
                         size="small"
+                        onClick={() => onNavigate('project-detail', project)}
+                        sx={{ color: '#2196f3' }}
+                        title="Ver detalles del proyecto"
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
                         onClick={() => handleOpenDialog(project)}
                         sx={{ color: GREEN }}
+                        title="Editar proyecto"
                       >
                         <EditIcon />
                       </IconButton>
@@ -328,6 +338,7 @@ const AdminProjects = ({ onNavigate }) => {
                         size="small"
                         onClick={() => handleDeleteProject(project.id)}
                         sx={{ color: '#f44336' }}
+                        title="Eliminar proyecto"
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -343,8 +354,8 @@ const AdminProjects = ({ onNavigate }) => {
                       mb: 2,
                       minHeight: 40,
                       display: '-webkit-box',
-                      '-webkit-line-clamp': 2,
-                      '-webkit-box-orient': 'vertical',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
                       overflow: 'hidden'
                     }}
                   >

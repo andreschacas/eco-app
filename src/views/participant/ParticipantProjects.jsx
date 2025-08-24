@@ -20,6 +20,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import dataService from '../../utils/dataService';
 import { useAuth } from '../../context/auth/AuthContext';
 
@@ -212,7 +213,7 @@ const ParticipantProjects = ({ onNavigate }) => {
           const taskCounts = getTaskStatusCounts(project.id);
 
           return (
-            <Grid item xs={12} md={6} lg={4} key={project.id}>
+            <Grid item size={{ xs: 12, md: 6, lg: 4 }} key={project.id}>
               <Card 
                 sx={{ 
                   borderRadius: 3, 
@@ -227,17 +228,31 @@ const ParticipantProjects = ({ onNavigate }) => {
                 <CardContent>
                   {/* Header */}
                   <Box sx={{ mb: 2 }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 600, 
-                        fontFamily: 'Poppins, sans-serif',
-                        mb: 1,
-                        lineHeight: 1.2
-                      }}
-                    >
-                      {project.name}
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          fontFamily: 'Poppins, sans-serif',
+                          lineHeight: 1.2,
+                          flex: 1,
+                          mr: 1
+                        }}
+                      >
+                        {project.name}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => onNavigate('project-detail', project)}
+                        sx={{ 
+                          color: '#2196f3',
+                          p: 0.5
+                        }}
+                        title="Ver detalles del proyecto"
+                      >
+                        <VisibilityIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <Chip
                         label={project.status}
@@ -263,8 +278,8 @@ const ParticipantProjects = ({ onNavigate }) => {
                       mb: 2,
                       minHeight: 40,
                       display: '-webkit-box',
-                      '-webkit-line-clamp': 2,
-                      '-webkit-box-orient': 'vertical',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
                       overflow: 'hidden'
                     }}
                   >

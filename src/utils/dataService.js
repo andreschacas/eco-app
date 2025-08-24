@@ -10,7 +10,9 @@ const STORAGE_KEYS = {
   PROJECT_USERS: 'eco_project_users',
   TASK_ASSIGNMENTS: 'eco_task_assignments',
   METRIC_TYPES: 'eco_metric_types',
-  METRIC_HISTORY: 'eco_metric_history'
+  METRIC_HISTORY: 'eco_metric_history',
+  COMMENTS: 'eco_comments',
+  ATTACHMENTS: 'eco_attachments'
 };
 
 // Datos iniciales del sistema
@@ -118,6 +120,146 @@ const INITIAL_DATA = {
     { id: 5, name: 'Área Verde', unit: 'm²', category: 'Biodiversidad' }
   ],
 
+  metrics: [
+    // Métricas para Proyecto 1: Tesis Huella de Carbono
+    {
+      id: 1,
+      name: 'Reducción de Emisiones CO2',
+      project_id: 1,
+      metric_type_id: 1,
+      unit: 'kg CO2',
+      target_value: 1200,
+      current_value: 340,
+      description: 'Meta de reducción de emisiones de carbono del proyecto',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      name: 'Eficiencia Energética',
+      project_id: 1,
+      metric_type_id: 2,
+      unit: 'kWh',
+      target_value: 5000,
+      current_value: 1850,
+      description: 'Ahorro energético esperado del proyecto',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 3,
+      name: 'Presupuesto Utilizado',
+      project_id: 1,
+      metric_type_id: null,
+      unit: '€',
+      target_value: 15000,
+      current_value: 8500,
+      description: 'Presupuesto ejecutado vs presupuesto total',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 4,
+      name: 'Progreso del Proyecto',
+      project_id: 1,
+      metric_type_id: null,
+      unit: '%',
+      target_value: 100,
+      current_value: 65,
+      description: 'Porcentaje de avance del proyecto',
+      created_at: new Date().toISOString()
+    },
+    
+    // Métricas para Proyecto 2: Pared Verde Sustentable
+    {
+      id: 5,
+      name: 'Absorción de CO2',
+      project_id: 2,
+      metric_type_id: 1,
+      unit: 'kg CO2',
+      target_value: 800,
+      current_value: 0,
+      description: 'CO2 absorbido por las plantas instaladas',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 6,
+      name: 'Consumo Eléctrico',
+      project_id: 2,
+      metric_type_id: 2,
+      unit: 'kWh',
+      target_value: 2000,
+      current_value: 0,
+      description: 'Consumo energético del sistema de riego',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 7,
+      name: 'Inversión Total',
+      project_id: 2,
+      metric_type_id: null,
+      unit: '€',
+      target_value: 25000,
+      current_value: 3200,
+      description: 'Inversión total en la pared verde',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 8,
+      name: 'Avance de Implementación',
+      project_id: 2,
+      metric_type_id: null,
+      unit: '%',
+      target_value: 100,
+      current_value: 15,
+      description: 'Porcentaje de implementación de la pared verde',
+      created_at: new Date().toISOString()
+    },
+    
+    // Métricas para Proyecto 3: Tesis Huella Hídrica
+    {
+      id: 9,
+      name: 'Reducción Consumo Agua',
+      project_id: 3,
+      metric_type_id: 3,
+      unit: 'kg CO2',
+      target_value: 500,
+      current_value: 0,
+      description: 'Reducción indirecta de CO2 por ahorro de agua',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 10,
+      name: 'Análisis de Muestras',
+      project_id: 3,
+      metric_type_id: 2,
+      unit: 'kWh',
+      target_value: 1500,
+      current_value: 0,
+      description: 'Consumo energético del laboratorio de análisis',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 11,
+      name: 'Costo de Investigación',
+      project_id: 3,
+      metric_type_id: null,
+      unit: '€',
+      target_value: 12000,
+      current_value: 1800,
+      description: 'Presupuesto destinado a la investigación',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 12,
+      name: 'Progreso de Análisis',
+      project_id: 3,
+      metric_type_id: null,
+      unit: '%',
+      target_value: 100,
+      current_value: 8,
+      description: 'Porcentaje de análisis hídrico completado',
+      created_at: new Date().toISOString()
+    }
+  ],
+
   tasks: [
     {
       id: 1,
@@ -205,6 +347,14 @@ const INITIAL_DATA = {
     { id: 6, task_id: 5, user_id: 4, assigned_at: new Date().toISOString() },
     { id: 7, task_id: 6, user_id: 3, assigned_at: new Date().toISOString() },
     { id: 8, task_id: 6, user_id: 4, assigned_at: new Date().toISOString() }
+  ],
+
+  comments: [
+    // Los comentarios se crearán dinámicamente por los usuarios
+  ],
+
+  attachments: [
+    // Los adjuntos se crearán dinámicamente por los usuarios
   ]
 };
 
@@ -229,6 +379,15 @@ class DataService {
     }
     if (!localStorage.getItem(STORAGE_KEYS.TASK_ASSIGNMENTS)) {
       localStorage.setItem(STORAGE_KEYS.TASK_ASSIGNMENTS, JSON.stringify(INITIAL_DATA.taskAssignments));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.METRICS)) {
+      localStorage.setItem(STORAGE_KEYS.METRICS, JSON.stringify(INITIAL_DATA.metrics));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.COMMENTS)) {
+      localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(INITIAL_DATA.comments));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.ATTACHMENTS)) {
+      localStorage.setItem(STORAGE_KEYS.ATTACHMENTS, JSON.stringify(INITIAL_DATA.attachments));
     }
   }
 
@@ -349,6 +508,19 @@ class DataService {
     return null;
   }
 
+  removeUserFromProject(projectId, userId) {
+    const projectUsers = this.getAll('project_users');
+    const filteredProjectUsers = projectUsers.filter(pu => 
+      !(pu.project_id === parseInt(projectId) && pu.user_id === parseInt(userId))
+    );
+    
+    if (filteredProjectUsers.length < projectUsers.length) {
+      this.saveAll('project_users', filteredProjectUsers);
+      return true;
+    }
+    return false;
+  }
+
   // Métodos específicos para tareas
   getTasksByProject(projectId) {
     const tasks = this.getAll('tasks');
@@ -425,6 +597,113 @@ class DataService {
       pendingTasks: tasks.filter(t => t.status === 'Pendiente').length,
       inProgressTasks: tasks.filter(t => t.status === 'En progreso').length
     };
+  }
+
+  // Métodos específicos para comentarios
+  getProjectComments(projectId) {
+    const comments = this.getAll('comments');
+    return comments.filter(comment => comment.project_id === parseInt(projectId));
+  }
+
+  createComment(projectId, userId, content, parentId = null, attachments = []) {
+    const newComment = {
+      id: Date.now(),
+      project_id: parseInt(projectId),
+      user_id: parseInt(userId),
+      content: content.trim(),
+      parent_id: parentId ? parseInt(parentId) : null,
+      attachments: attachments,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const comments = this.getAll('comments');
+    comments.push(newComment);
+    this.saveAll('comments', comments);
+    return newComment;
+  }
+
+  updateComment(commentId, content) {
+    const comments = this.getAll('comments');
+    const index = comments.findIndex(comment => comment.id === parseInt(commentId));
+    
+    if (index !== -1) {
+      comments[index] = {
+        ...comments[index],
+        content: content.trim(),
+        updated_at: new Date().toISOString()
+      };
+      this.saveAll('comments', comments);
+      return comments[index];
+    }
+    return null;
+  }
+
+  deleteComment(commentId) {
+    const comments = this.getAll('comments');
+    
+    // Eliminar el comentario y todos sus hijos (replies)
+    const toDelete = [];
+    const findCommentAndChildren = (id) => {
+      toDelete.push(parseInt(id));
+      const children = comments.filter(c => c.parent_id === parseInt(id));
+      children.forEach(child => findCommentAndChildren(child.id));
+    };
+    
+    findCommentAndChildren(commentId);
+    
+    const filteredComments = comments.filter(comment => !toDelete.includes(comment.id));
+    this.saveAll('comments', filteredComments);
+    return true;
+  }
+
+  getCommentWithUser(commentId) {
+    const comment = this.getById('comments', commentId);
+    if (comment) {
+      const user = this.getUserById(comment.user_id);
+      return {
+        ...comment,
+        user: user
+      };
+    }
+    return null;
+  }
+
+  // Métodos para manejar adjuntos
+  createAttachment(file, commentId = null) {
+    const attachment = {
+      id: Date.now(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      data: null, // Simulado - en producción sería URL o base64
+      comment_id: commentId ? parseInt(commentId) : null,
+      created_at: new Date().toISOString()
+    };
+
+    // Simular la carga del archivo
+    if (file.type.startsWith('image/')) {
+      attachment.data = `data:${file.type};base64,/9j/4AAQSkZJRgABAQAAAQABAAD...`; // Base64 simulado
+    } else {
+      attachment.data = `file_${attachment.id}_${file.name}`; // URL simulada
+    }
+
+    const attachments = this.getAll('attachments');
+    attachments.push(attachment);
+    this.saveAll('attachments', attachments);
+    return attachment;
+  }
+
+  getCommentAttachments(commentId) {
+    const attachments = this.getAll('attachments');
+    return attachments.filter(attachment => attachment.comment_id === parseInt(commentId));
+  }
+
+  deleteAttachment(attachmentId) {
+    const attachments = this.getAll('attachments');
+    const filteredAttachments = attachments.filter(attachment => attachment.id !== parseInt(attachmentId));
+    this.saveAll('attachments', filteredAttachments);
+    return true;
   }
 }
 

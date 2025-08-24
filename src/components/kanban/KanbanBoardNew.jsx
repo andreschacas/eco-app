@@ -373,38 +373,44 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
     try {
       let allTasks = dataService.getAll('tasks');
       
-      // Filtrar tareas según el rol y parámetros
+      // PRIMER FILTRO: Por proyecto específico si se proporciona
+      if (projectId) {
+        allTasks = allTasks.filter(task => task.project_id === projectId);
+      }
+      
+      // SEGUNDO FILTRO: Por rol y usuario si es necesario
       if (filterByRole && user) {
         switch (user.role) {
           case 'Administrador':
-            // Administrador ve todas las tareas
+            // Administrador ve todas las tareas (ya filtradas por proyecto si aplica)
             break;
           case 'Coordinador':
-            if (projectId) {
-              // Si se especifica un proyecto, solo tareas de ese proyecto
-              allTasks = allTasks.filter(task => task.project_id === projectId);
-            } else {
-              // Si no, tareas de proyectos donde es coordinador
+            if (!projectId) {
+              // Si no hay proyecto específico, tareas de proyectos donde es coordinador
               const coordinatorProjects = dataService.getProjectsByCoordinator(user.id);
               const projectIds = coordinatorProjects.map(p => p.id);
               allTasks = allTasks.filter(task => projectIds.includes(task.project_id));
             }
+            // Si hay projectId, ya se filtró arriba
             break;
           case 'Participante':
             if (userId) {
-              // Tareas asignadas a un usuario específico
-              allTasks = dataService.getTasksByUser(userId);
+              // Tareas asignadas a un usuario específico (dentro del proyecto si aplica)
+              const userTasks = dataService.getTasksByUser(userId);
+              allTasks = allTasks.filter(task => 
+                userTasks.some(userTask => userTask.id === task.id)
+              );
             } else {
-              // Tareas asignadas al usuario actual
-              allTasks = dataService.getTasksByUser(user.id);
+              // Tareas asignadas al usuario actual (dentro del proyecto si aplica)
+              const userTasks = dataService.getTasksByUser(user.id);
+              allTasks = allTasks.filter(task => 
+                userTasks.some(userTask => userTask.id === task.id)
+              );
             }
             break;
         }
-      } else if (projectId) {
-        // Filtrar por proyecto específico
-        allTasks = allTasks.filter(task => task.project_id === projectId);
-      } else if (userId) {
-        // Filtrar por usuario específico
+      } else if (userId && !projectId) {
+        // Filtrar por usuario específico solo si no hay proyecto
         allTasks = dataService.getTasksByUser(userId);
       }
 

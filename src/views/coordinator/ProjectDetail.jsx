@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -34,52 +34,59 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PeopleIcon from '@mui/icons-material/People';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import CommentIcon from '@mui/icons-material/Comment';
+import ReplyIcon from '@mui/icons-material/Reply';
+import SendIcon from '@mui/icons-material/Send';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import ImageIcon from '@mui/icons-material/Image';
+import DownloadIcon from '@mui/icons-material/Download';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import ConstructionIcon from '@mui/icons-material/Construction';
 import dataService from '../../utils/dataService';
+import KanbanBoardNew from '../../components/kanban/KanbanBoardNew';
+import { useAuth } from '../../context/auth/AuthContext';
 
 const GREEN = '#2AAC26';
 
 const ProjectDetail = ({ project, onNavigate }) => {
+  const { user } = useAuth();
   const [currentProject, setCurrentProject] = useState(project);
   const [activeTab, setActiveTab] = useState(0);
-  const [tasks, setTasks] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [metrics, setMetrics] = useState([]);
+  const [comments, setComments] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
-  const [openTaskDialog, setOpenTaskDialog] = useState(false);
   const [openParticipantDialog, setOpenParticipantDialog] = useState(false);
   const [openMetricDialog, setOpenMetricDialog] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
   const [editingMetric, setEditingMetric] = useState(null);
-  const [taskForm, setTaskForm] = useState({
-    title: '',
-    description: '',
-    status: 'Pendiente',
-    priority: 'Media',
-    due_date: '',
-    assigned_users: []
-  });
   const [metricForm, setMetricForm] = useState({
     value: '',
     notes: ''
   });
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  const taskStatuses = ['Pendiente', 'En progreso', 'Completada'];
-  const priorities = ['Baja', 'Media', 'Alta', 'Crítica'];
+  // Ref para el campo de comentarios
+  const commentFieldRef = useRef(null);
 
   useEffect(() => {
     if (currentProject) {
+      // Forzar limpieza de comentarios si es la primera carga
+      const shouldClearComments = localStorage.getItem('eco_force_clear_comments');
+      if (!shouldClearComments) {
+        dataService.saveAll('comments', []);
+        localStorage.setItem('eco_force_clear_comments', 'true');
+      }
       loadProjectData();
     }
   }, [currentProject]);
 
   const loadProjectData = () => {
     try {
-      // Cargar tareas
-      const projectTasks = dataService.getTasksByProject(currentProject.id);
-      setTasks(projectTasks);
-
       // Cargar participantes
       const projectParticipants = dataService.getProjectParticipants(currentProject.id);
       setParticipants(projectParticipants);
@@ -87,6 +94,14 @@ const ProjectDetail = ({ project, onNavigate }) => {
       // Cargar métricas
       const projectMetrics = dataService.getProjectMetrics(currentProject.id);
       setMetrics(projectMetrics);
+
+      // Cargar comentarios
+      const projectComments = dataService.getProjectComments(currentProject.id);
+      const commentsWithUsers = projectComments.map(comment => ({
+        ...comment,
+        user: dataService.getUserById(comment.user_id)
+      }));
+      setComments(commentsWithUsers);
 
       // Cargar usuarios disponibles (participantes activos)
       const allUsers = dataService.getAll('users')
@@ -100,92 +115,16 @@ const ProjectDetail = ({ project, onNavigate }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Completada': return '#4caf50';
+      case 'Completado': return '#4caf50';
       case 'En progreso': return '#2196f3';
-      case 'Pendiente': return '#ff9800';
+      case 'Planificación': return '#ff9800';
+      case 'Pausado': return '#f44336';
+      case 'Cancelado': return '#757575';
       default: return '#757575';
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'Crítica': return '#f44336';
-      case 'Alta': return '#ff9800';
-      case 'Media': return '#2196f3';
-      case 'Baja': return '#4caf50';
-      default: return '#757575';
-    }
-  };
 
-  const handleOpenTaskDialog = (task = null) => {
-    if (task) {
-      setEditingTask(task);
-      setTaskForm({
-        title: task.title,
-        description: task.description,
-        status: task.status,
-        priority: task.priority,
-        due_date: task.due_date,
-        assigned_users: task.assigned_users || []
-      });
-    } else {
-      setEditingTask(null);
-      setTaskForm({
-        title: '',
-        description: '',
-        status: 'Pendiente',
-        priority: 'Media',
-        due_date: '',
-        assigned_users: []
-      });
-    }
-    setOpenTaskDialog(true);
-  };
-
-  const handleSaveTask = () => {
-    try {
-      if (!taskForm.title || !taskForm.description) {
-        showSnackbar('Por favor complete todos los campos obligatorios', 'error');
-        return;
-      }
-
-      const taskData = {
-        ...taskForm,
-        project_id: currentProject.id
-      };
-
-      if (editingTask) {
-        dataService.update('tasks', editingTask.id, taskData);
-        showSnackbar('Tarea actualizada exitosamente', 'success');
-      } else {
-        const newTask = dataService.create('tasks', taskData);
-        
-        // Asignar usuarios a la tarea
-        if (taskForm.assigned_users.length > 0) {
-          taskForm.assigned_users.forEach(userId => {
-            dataService.assignTaskToUser(newTask.id, userId);
-          });
-        }
-        
-        showSnackbar('Tarea creada exitosamente', 'success');
-      }
-
-      loadProjectData();
-      setOpenTaskDialog(false);
-    } catch (error) {
-      showSnackbar('Error al guardar la tarea', 'error');
-    }
-  };
-
-  const handleDeleteTask = (taskId) => {
-    try {
-      dataService.delete('tasks', taskId);
-      showSnackbar('Tarea eliminada exitosamente', 'success');
-      loadProjectData();
-    } catch (error) {
-      showSnackbar('Error al eliminar la tarea', 'error');
-    }
-  };
 
   const handleAddParticipant = () => {
     try {
@@ -212,12 +151,17 @@ const ProjectDetail = ({ project, onNavigate }) => {
 
   const handleRemoveParticipant = (participantId) => {
     try {
-      // Aquí deberías implementar la lógica para remover del proyecto
-      // Por simplicidad, no se implementa la eliminación completa
+      const removed = dataService.removeUserFromProject(currentProject.id, participantId);
+      
+      if (removed) {
       showSnackbar('Participante removido exitosamente', 'success');
       loadProjectData();
+      } else {
+        showSnackbar('No se pudo remover el participante', 'error');
+      }
     } catch (error) {
       showSnackbar('Error al remover participante', 'error');
+      console.error('Error removing participant:', error);
     }
   };
 
@@ -246,8 +190,200 @@ const ProjectDetail = ({ project, onNavigate }) => {
     }
   };
 
+  // Funciones para manejar comentarios
+  const handleAddComment = useCallback(() => {
+    try {
+      if (!newComment.trim() && attachments.length === 0) {
+        showSnackbar('Por favor escriba un comentario o adjunte un archivo', 'error');
+        return;
+      }
+
+      const commentAttachments = attachments.map(attachment => ({
+        id: attachment.id,
+        name: attachment.name,
+        type: attachment.type,
+        size: attachment.size,
+        data: attachment.data
+      }));
+
+      dataService.createComment(currentProject.id, user.id, newComment, replyingTo, commentAttachments);
+      
+      // Limpiar el estado sin perder el foco
+      setNewComment('');
+      setAttachments([]);
+      setReplyingTo(null);
+      
+      // Recargar datos de forma diferida para no interrumpir la UX
+      setTimeout(() => {
+        loadProjectData();
+      }, 100);
+      
+      showSnackbar('Comentario agregado exitosamente', 'success');
+    } catch (error) {
+      showSnackbar('Error al agregar comentario', 'error');
+    }
+  }, [newComment, attachments, replyingTo, currentProject, user]);
+
+  const handleReplyToComment = (commentId) => {
+    setReplyingTo(commentId);
+    setNewComment('');
+  };
+
+  const handleDeleteComment = (commentId) => {
+    try {
+      dataService.deleteComment(commentId);
+      loadProjectData();
+      showSnackbar('Comentario eliminado exitosamente', 'success');
+    } catch (error) {
+      showSnackbar('Error al eliminar comentario', 'error');
+    }
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment);
+    setNewComment(comment.content);
+    setReplyingTo(null);
+  };
+
+  const handleUpdateComment = () => {
+    try {
+      if (!newComment.trim()) {
+        showSnackbar('Por favor escriba un comentario', 'error');
+        return;
+      }
+
+      dataService.updateComment(editingComment.id, newComment);
+      setNewComment('');
+      setEditingComment(null);
+      loadProjectData();
+      showSnackbar('Comentario actualizado exitosamente', 'success');
+    } catch (error) {
+      showSnackbar('Error al actualizar comentario', 'error');
+    }
+  };
+
+  const cancelCommentEdit = useCallback(() => {
+    setEditingComment(null);
+    setReplyingTo(null);
+    setNewComment('');
+    setAttachments([]);
+  }, []);
+
+  // Funciones para manejar adjuntos
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const newAttachments = [];
+
+    files.forEach(file => {
+      // Validar tamaño (máximo 10MB simulado)
+      if (file.size > 10 * 1024 * 1024) {
+        showSnackbar(`El archivo ${file.name} es demasiado grande (máximo 10MB)`, 'error');
+        return;
+      }
+
+      // Validar tipo de archivo
+      const allowedTypes = ['image/', 'application/pdf', 'text/', 'application/msword', 'application/vnd.ms-excel'];
+      const isAllowed = allowedTypes.some(type => file.type.startsWith(type));
+      
+      if (!isAllowed) {
+        showSnackbar(`Tipo de archivo no permitido: ${file.name}`, 'error');
+        return;
+      }
+
+      // Simular la carga del archivo
+      const attachment = {
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        data: file.type.startsWith('image/') ? 
+          URL.createObjectURL(file) : 
+          `file_${Date.now()}_${file.name}`
+      };
+
+      newAttachments.push(attachment);
+    });
+
+    setAttachments(prev => [...prev, ...newAttachments]);
+    event.target.value = ''; // Limpiar input
+  };
+
+  const removeAttachment = (attachmentId) => {
+    setAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
+  };
+
+  // Función para limpiar manualmente los comentarios (para depuración)
+  const clearAllComments = useCallback(() => {
+    dataService.saveAll('comments', []);
+    localStorage.removeItem('eco_force_clear_comments');
+    setComments([]);
+    setNewComment('');
+    setAttachments([]);
+    setReplyingTo(null);
+    setEditingComment(null);
+    showSnackbar('Comentarios limpiados exitosamente', 'info');
+  }, []);
+
+  // Componente de textarea ultra-simple que mantiene el foco
+  const SimpleTextarea = ({ value, onChange, placeholder }) => {
+    const textareaRef = useRef(null);
+    
+    // Manejar cambios sin perder foco
+    const handleChange = (e) => {
+      const newValue = e.target.value;
+      onChange(newValue);
+    };
+
+    // Asegurar que el valor se mantiene sincronizado
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.value = value;
+      }
+    }, [value]);
+
+    return (
+      <textarea
+        ref={textareaRef}
+        onChange={handleChange}
+        placeholder={placeholder}
+        rows={3}
+        style={{
+          width: '100%',
+          minHeight: '80px',
+          padding: '12px',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          fontFamily: 'Poppins, sans-serif',
+          fontSize: '14px',
+          color: '#333', // ARREGLADO: Color de texto visible
+          backgroundColor: '#fff',
+          resize: 'vertical',
+          outline: 'none',
+          boxSizing: 'border-box',
+          lineHeight: '1.4'
+        }}
+        onFocus={(e) => {
+          e.target.style.borderColor = GREEN;
+          e.target.style.boxShadow = `0 0 0 2px ${GREEN}30`;
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = '#ddd';
+          e.target.style.boxShadow = 'none';
+        }}
+      />
+    );
   };
 
   const TabPanel = ({ children, value, index }) => (
@@ -256,11 +392,21 @@ const ProjectDetail = ({ project, onNavigate }) => {
     </div>
   );
 
+  const getBackView = () => {
+    if (!user) return 'coordinator-dashboard';
+    switch (user.role) {
+      case 'Administrador': return 'admin-projects';
+      case 'Coordinador': return 'coordinator-dashboard';
+      case 'Participante': return 'participant-dashboard';
+      default: return 'coordinator-dashboard';
+    }
+  };
+
   if (!currentProject) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h6">Proyecto no encontrado</Typography>
-        <Button onClick={() => onNavigate('coordinator-dashboard')} sx={{ mt: 2 }}>
+        <Button onClick={() => onNavigate(getBackView())} sx={{ mt: 2 }}>
           Volver al Dashboard
         </Button>
       </Box>
@@ -272,7 +418,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <IconButton 
-          onClick={() => onNavigate('coordinator-dashboard')}
+          onClick={() => onNavigate(getBackView())}
           sx={{ mr: 2 }}
         >
           <ArrowBackIcon />
@@ -328,112 +474,27 @@ const ProjectDetail = ({ project, onNavigate }) => {
               label="Métricas" 
               sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
             />
+            <Tab 
+              icon={<CommentIcon />} 
+              label="Comentarios" 
+              sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
+            />
+            <Tab 
+              icon={<CalendarTodayIcon />} 
+              label="Calendario" 
+              sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
+            />
           </Tabs>
         </Box>
 
-        {/* Tasks Tab */}
+        {/* Tasks Tab - Kanban Board */}
         <TabPanel value={activeTab} index={0}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                Gestión de Tareas
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenTaskDialog()}
-                sx={{
-                  bgcolor: GREEN,
-                  textTransform: 'none',
-                  fontFamily: 'Poppins, sans-serif',
-                  '&:hover': { bgcolor: '#1f9a1f' }
-                }}
-              >
-                Nueva Tarea
-              </Button>
-            </Box>
-
-            <List>
-              {tasks.map((task) => (
-                <ListItem 
-                  key={task.id}
-                  sx={{
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 2,
-                    mb: 1,
-                    '&:hover': { bgcolor: '#f8f9fa' }
-                  }}
-                >
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                          {task.title}
-                        </Typography>
-                        <Chip
-                          label={task.status}
-                          size="small"
-                          sx={{
-                            bgcolor: `${getStatusColor(task.status)}20`,
-                            color: getStatusColor(task.status),
-                            fontFamily: 'Poppins, sans-serif'
-                          }}
-                        />
-                        <Chip
-                          label={task.priority}
-                          size="small"
-                          sx={{
-                            bgcolor: `${getPriorityColor(task.priority)}20`,
-                            color: getPriorityColor(task.priority),
-                            fontFamily: 'Poppins, sans-serif'
-                          }}
+          <Box sx={{ p: 0, overflow: 'hidden' }}>
+            <KanbanBoardNew 
+              projectId={currentProject.id}
+              filterByRole={user?.role === 'Participante'}
                         />
                       </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                          {task.description}
-                        </Typography>
-                        {task.due_date && (
-                          <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
-                            Vence: {new Date(task.due_date).toLocaleDateString('es-ES')}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleOpenTaskDialog(task)}
-                      sx={{ mr: 1, color: GREEN }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeleteTask(task.id)}
-                      sx={{ color: '#f44336' }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            </List>
-
-            {tasks.length === 0 && (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                  No hay tareas creadas aún
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
-                  Crea la primera tarea para comenzar
-                </Typography>
-              </Box>
-            )}
-          </CardContent>
         </TabPanel>
 
         {/* Participants Tab */}
@@ -443,6 +504,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
               <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
                 Participantes del Proyecto
               </Typography>
+              {(user?.role === 'Administrador' || user?.role === 'Coordinador') && (
               <Button
                 variant="contained"
                 startIcon={<PersonAddIcon />}
@@ -456,11 +518,12 @@ const ProjectDetail = ({ project, onNavigate }) => {
               >
                 Agregar Participante
               </Button>
+              )}
             </Box>
 
             <Grid container spacing={2}>
               {participants.map((participant) => (
-                <Grid item xs={12} sm={6} md={4} key={participant.id}>
+                <Grid item size={{ xs: 12, sm: 6, md: 4 }} key={participant.id}>
                   <Card sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Avatar 
@@ -474,6 +537,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
                       <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 2 }}>
                         {participant.email}
                       </Typography>
+                      {(user?.role === 'Administrador' || user?.role === 'Coordinador') && (
                       <IconButton
                         size="small"
                         onClick={() => handleRemoveParticipant(participant.id)}
@@ -481,6 +545,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
                       >
                         <DeleteIcon />
                       </IconButton>
+                      )}
                     </CardContent>
                   </Card>
                 </Grid>
@@ -509,7 +574,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
 
             <Grid container spacing={3}>
               {metrics.map((metric) => (
-                <Grid item xs={12} sm={6} md={4} key={metric.id}>
+                <Grid item size={{ xs: 12, sm: 6, md: 4 }} key={metric.id}>
                   <Card sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
                     <CardContent>
                       <Typography variant="h6" sx={{ fontWeight: 600, color: GREEN, fontFamily: 'Poppins, sans-serif' }}>
@@ -521,6 +586,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
                       <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 2 }}>
                         Meta: {metric.target_value} {metric.unit}
                       </Typography>
+                      {(user?.role === 'Administrador' || user?.role === 'Coordinador') && (
                       <Button
                         variant="outlined"
                         size="small"
@@ -534,6 +600,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
                       >
                         Actualizar Valor
                       </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </Grid>
@@ -552,103 +619,396 @@ const ProjectDetail = ({ project, onNavigate }) => {
             )}
           </CardContent>
         </TabPanel>
-      </Card>
 
-      {/* Task Dialog */}
-      <Dialog open={openTaskDialog} onClose={() => setOpenTaskDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600 }}>
-          {editingTask ? 'Editar Tarea' : 'Nueva Tarea'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
-              fullWidth
-              label="Título de la tarea"
-              value={taskForm.title}
-              onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-              required
-            />
-            <TextField
-              fullWidth
-              label="Descripción"
-              multiline
-              rows={3}
-              value={taskForm.description}
-              onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-              required
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Estado</InputLabel>
-                <Select
-                  value={taskForm.status}
-                  onChange={(e) => setTaskForm({ ...taskForm, status: e.target.value })}
-                  label="Estado"
-                >
-                  {taskStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Prioridad</InputLabel>
-                <Select
-                  value={taskForm.priority}
-                  onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
-                  label="Prioridad"
-                >
-                  {priorities.map((priority) => (
-                    <MenuItem key={priority} value={priority}>
-                      {priority}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+        {/* Comments Tab */}
+        <TabPanel value={activeTab} index={3}>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                Comentarios del Proyecto
+              </Typography>
+              {/* Botón de limpieza para depuración - remover en producción */}
+              <Button 
+                size="small" 
+                onClick={clearAllComments}
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  textTransform: 'none',
+                  color: '#999',
+                  '&:hover': { color: '#666' }
+                }}
+              >
+                🗑️ Limpiar Chat
+              </Button>
             </Box>
-            <TextField
-              fullWidth
-              label="Fecha de vencimiento"
-              type="date"
-              value={taskForm.due_date}
-              onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-              InputLabelProps={{ shrink: true }}
-            />
-            <Autocomplete
+
+            {/* New Comment Form */}
+            <Card sx={{ mb: 3, bgcolor: '#f8f9fa', borderRadius: 2 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                  <Avatar src={user?.avatar} alt={user?.name} sx={{ width: 40, height: 40 }} />
+                  <Box sx={{ flex: 1 }}>
+                    {(replyingTo || editingComment) && (
+                      <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                          {editingComment ? 'Editando comentario' : `Respondiendo a ${comments.find(c => c.id === replyingTo)?.user?.name}`}
+                        </Typography>
+                        <Button size="small" onClick={cancelCommentEdit} sx={{ minWidth: 'auto', p: 0.5 }}>
+                          ✕
+                        </Button>
+                      </Box>
+                    )}
+                    <Box sx={{ mb: 2 }}>
+                      <SimpleTextarea
+                        value={newComment}
+                        onChange={setNewComment}
+                        placeholder={replyingTo ? 'Escribe tu respuesta...' : 'Escribe un comentario...'}
+                      />
+                    </Box>
+
+                    {/* File attachments */}
+                    {attachments.length > 0 && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 1, display: 'block' }}>
+                          Archivos adjuntos:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {attachments.map((attachment) => (
+                            <Chip
+                              key={attachment.id}
+                              label={`${attachment.name} (${formatFileSize(attachment.size)})`}
+                              onDelete={() => removeAttachment(attachment.id)}
+                              variant="outlined"
+                              size="small"
+                              icon={attachment.type.startsWith('image/') ? <ImageIcon /> : <AttachFileIcon />}
+                              sx={{ fontFamily: 'Poppins, sans-serif' }}
+                            />
+                          ))}
+            </Box>
+                      </Box>
+                    )}
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <input
+                        type="file"
               multiple
-              options={participants}
-              getOptionLabel={(option) => option.name}
-              value={participants.filter(p => taskForm.assigned_users.includes(p.id))}
-              onChange={(event, newValue) => {
-                setTaskForm({ ...taskForm, assigned_users: newValue.map(user => user.id) });
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Asignar a participantes"
-                  placeholder="Seleccionar participantes"
-                />
-              )}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenTaskDialog(false)}>
-            Cancelar
-          </Button>
+                        style={{ display: 'none' }}
+                        id="file-upload"
+                        onChange={handleFileUpload}
+                        accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx"
+                      />
+                      <label htmlFor="file-upload">
+                        <IconButton
+                          component="span"
+                          size="small"
+                          sx={{ color: '#666' }}
+                          title="Adjuntar archivo"
+                        >
+                          <AttachFileIcon />
+                        </IconButton>
+                      </label>
+                      
           <Button 
-            onClick={handleSaveTask} 
             variant="contained" 
+                        startIcon={<SendIcon />}
+                        onClick={editingComment ? handleUpdateComment : handleAddComment}
+                        disabled={!newComment.trim() && attachments.length === 0}
             sx={{ 
               bgcolor: GREEN,
+                          textTransform: 'none',
+                          fontFamily: 'Poppins, sans-serif',
               '&:hover': { bgcolor: '#1f9a1f' }
             }}
           >
-            {editingTask ? 'Actualizar' : 'Crear'}
+                        {editingComment ? 'Actualizar' : (replyingTo ? 'Responder' : 'Comentar')}
           </Button>
-        </DialogActions>
-      </Dialog>
+                      {(replyingTo || editingComment) && (
+                        <Button
+                          variant="outlined"
+                          onClick={cancelCommentEdit}
+                          sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
+                        >
+                          Cancelar
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Comments List */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {comments
+                .filter(comment => !comment.parent_id)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .map((comment) => (
+                <Card key={comment.id} sx={{ borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                  <CardContent>
+                    {/* Main Comment */}
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                      <Avatar src={comment.user?.avatar} alt={comment.user?.name} sx={{ width: 40, height: 40 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                            {comment.user?.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                            {new Date(comment.created_at).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </Typography>
+                          {comment.created_at !== comment.updated_at && (
+                            <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif', fontStyle: 'italic' }}>
+                              (editado)
+                            </Typography>
+                          )}
+                        </Box>
+                        <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', mb: 2 }}>
+                          {comment.content}
+                        </Typography>
+
+                        {/* Attachments */}
+                        {comment.attachments && comment.attachments.length > 0 && (
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                              {comment.attachments.map((attachment) => (
+                                <Card key={attachment.id} sx={{ maxWidth: 200, border: '1px solid #e0e0e0' }}>
+                                  <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                                    {attachment.type.startsWith('image/') ? (
+                                      <Box>
+                                        <img 
+                                          src={attachment.data} 
+                                          alt={attachment.name}
+                                          style={{ 
+                                            width: '100%', 
+                                            height: 'auto',
+                                            maxHeight: '120px',
+                                            objectFit: 'cover',
+                                            borderRadius: '4px'
+                                          }}
+                                        />
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontFamily: 'Poppins, sans-serif' }}>
+                                          {attachment.name}
+                                        </Typography>
+                                      </Box>
+                                    ) : (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <AttachFileIcon sx={{ fontSize: 16, color: '#666' }} />
+                                        <Box>
+                                          <Typography variant="caption" sx={{ fontFamily: 'Poppins, sans-serif', display: 'block' }}>
+                                            {attachment.name}
+                                          </Typography>
+                                          <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
+                                            {formatFileSize(attachment.size)}
+                                          </Typography>
+                                        </Box>
+                                        <IconButton size="small" sx={{ ml: 'auto' }}>
+                                          <DownloadIcon sx={{ fontSize: 14 }} />
+                                        </IconButton>
+                                      </Box>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            startIcon={<ReplyIcon />}
+                            onClick={() => handleReplyToComment(comment.id)}
+                            sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
+                          >
+                            Responder
+                          </Button>
+                          {comment.user_id === user?.id && (
+                            <>
+                              <Button
+                                size="small"
+                                startIcon={<EditIcon />}
+                                onClick={() => handleEditComment(comment)}
+                                sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                size="small"
+                                startIcon={<DeleteIcon />}
+                                onClick={() => handleDeleteComment(comment.id)}
+                                sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif', color: '#f44336' }}
+                              >
+                                Eliminar
+                              </Button>
+                            </>
+                          )}
+                        </Box>
+                      </Box>
+                    </Box>
+
+                    {/* Replies */}
+                    {comments
+                      .filter(reply => reply.parent_id === comment.id)
+                      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                      .map((reply) => (
+                      <Box key={reply.id} sx={{ ml: 6, mt: 2, pl: 2, borderLeft: '2px solid #e0e0e0' }}>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                          <Avatar src={reply.user?.avatar} alt={reply.user?.name} sx={{ width: 32, height: 32 }} />
+                          <Box sx={{ flex: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif', fontSize: '0.875rem' }}>
+                                {reply.user?.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                                {new Date(reply.created_at).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </Typography>
+                              {reply.created_at !== reply.updated_at && (
+                                <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif', fontStyle: 'italic' }}>
+                                  (editado)
+                                </Typography>
+                              )}
+                            </Box>
+                            <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.875rem', mb: 1 }}>
+                              {reply.content}
+                            </Typography>
+
+                            {/* Reply Attachments */}
+                            {reply.attachments && reply.attachments.length > 0 && (
+                              <Box sx={{ mb: 1 }}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  {reply.attachments.map((attachment) => (
+                                    <Card key={attachment.id} sx={{ maxWidth: 150, border: '1px solid #e0e0e0' }}>
+                                      <CardContent sx={{ p: 0.5, '&:last-child': { pb: 0.5 } }}>
+                                        {attachment.type.startsWith('image/') ? (
+                                          <Box>
+                                            <img 
+                                              src={attachment.data} 
+                                              alt={attachment.name}
+                                              style={{ 
+                                                width: '100%', 
+                                                height: 'auto',
+                                                maxHeight: '80px',
+                                                objectFit: 'cover',
+                                                borderRadius: '2px'
+                                              }}
+                                            />
+                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.25, fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem' }}>
+                                              {attachment.name}
+                                            </Typography>
+                                          </Box>
+                                        ) : (
+                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <AttachFileIcon sx={{ fontSize: 12, color: '#666' }} />
+                                            <Typography variant="caption" sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem' }}>
+                                              {attachment.name}
+                                            </Typography>
+                                          </Box>
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                            {reply.user_id === user?.id && (
+                              <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Button
+                                  size="small"
+                                  startIcon={<EditIcon />}
+                                  onClick={() => handleEditComment(reply)}
+                                  sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem' }}
+                                >
+                                  Editar
+                                </Button>
+                                <Button
+                                  size="small"
+                                  startIcon={<DeleteIcon />}
+                                  onClick={() => handleDeleteComment(reply.id)}
+                                  sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem', color: '#f44336' }}
+                                >
+                                  Eliminar
+                                </Button>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+
+              {comments.filter(comment => !comment.parent_id).length === 0 && (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <CommentIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                  <Typography variant="h6" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                    No hay comentarios aún
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif', mt: 1 }}>
+                    Sé el primero en comentar sobre este proyecto
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </CardContent>
+        </TabPanel>
+
+        {/* Calendar Tab */}
+        <TabPanel value={activeTab} index={4}>
+          <CardContent>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <ConstructionIcon sx={{ fontSize: 80, color: '#ccc', mb: 3 }} />
+              <Typography variant="h4" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Poppins, sans-serif', color: '#666' }}>
+                Calendario
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 500, mb: 1, fontFamily: 'Poppins, sans-serif', color: GREEN }}>
+                En Construcción
+              </Typography>
+              <Typography variant="body1" sx={{ fontFamily: 'Poppins, sans-serif', color: '#999', mb: 3, maxWidth: 400, mx: 'auto' }}>
+                Esta funcionalidad estará disponible próximamente. Aquí podrás gestionar eventos, fechas importantes y cronogramas del proyecto.
+              </Typography>
+              <Box sx={{ 
+                bgcolor: '#f8f9fa', 
+                borderRadius: 2, 
+                p: 3, 
+                border: '2px dashed #ddd',
+                maxWidth: 500,
+                mx: 'auto'
+              }}>
+                <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666', mb: 1 }}>
+                  <strong>Próximas características:</strong>
+                </Typography>
+                <Box component="ul" sx={{ textAlign: 'left', m: 0, pl: 2 }}>
+                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
+                    📅 Calendario interactivo del proyecto
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
+                    📝 Programación de reuniones
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
+                    ⏰ Recordatorios automáticos
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
+                    🎯 Hitos y fechas límite
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </CardContent>
+        </TabPanel>
+      </Card>
+
+
 
       {/* Add Participant Dialog */}
       <Dialog open={openParticipantDialog} onClose={() => setOpenParticipantDialog(false)} maxWidth="sm" fullWidth>
