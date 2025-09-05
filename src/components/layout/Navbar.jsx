@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-
+import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import Menu from '@mui/material/Menu';
@@ -17,6 +17,8 @@ import logo from '../../assets/eco-logo-pro.png';
 import { useAuth } from '../../context/auth/AuthContext';
 import CalendarDialog from '../common/CalendarDialog';
 import NotificationsDialog from '../common/NotificationsDialog';
+import NotificationModal from '../notifications/NotificationModal';
+import notificationService from '../../utils/notificationService';
 
 const GREEN = '#2AAC26';
 
@@ -25,6 +27,8 @@ const Navbar = ({ user: userProp, ...props }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationModalOpen, setNotificationModalOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const handleMenu = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -33,6 +37,34 @@ const Navbar = ({ user: userProp, ...props }) => {
     logout();
   };
   const userData = user || userProp;
+
+  // Cargar contador de notificaciones no leídas
+  useEffect(() => {
+    const loadUnreadCount = () => {
+      if (userData?.id) {
+        const count = notificationService.getUnreadCountByUser(userData.id);
+        setUnreadCount(count);
+      }
+    };
+
+    loadUnreadCount();
+    
+    // Actualizar cada 30 segundos
+    const interval = setInterval(loadUnreadCount, 30000);
+    
+    return () => clearInterval(interval);
+  }, [notificationsOpen, userData?.id]);
+
+  // Función para actualizar el contador cuando se marquen notificaciones como leídas
+  const handleNotificationRead = () => {
+    if (userData?.id) {
+      const count = notificationService.getUnreadCountByUser(userData.id);
+      setUnreadCount(count);
+    }
+  };
+
+  // Verificar si el usuario puede enviar notificaciones
+  const canSendNotifications = userData?.role === 'admin' || userData?.role === 'coordinator';
 
   return (
     <>
@@ -102,7 +134,9 @@ const Navbar = ({ user: userProp, ...props }) => {
               }}
               onClick={() => setNotificationsOpen(true)}
             >
+              <Badge badgeContent={unreadCount} color="error" max={99}>
                 <NotificationsNoneIcon />
+              </Badge>
             </IconButton>
             <Stack direction="row" alignItems="center" spacing={1}>
               <IconButton onClick={handleMenu} size="small" sx={{ p: 0 }}>
@@ -113,6 +147,11 @@ const Navbar = ({ user: userProp, ...props }) => {
               </Typography>
               <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
                 <MenuItem disabled>Rol: {userData?.role}</MenuItem>
+                {canSendNotifications && (
+                  <MenuItem onClick={() => { setNotificationModalOpen(true); handleClose(); }}>
+                    Enviar Notificación
+                  </MenuItem>
+                )}
                 <MenuItem onClick={handleLogout} sx={{ color: 'red', fontWeight: 600 }}>Cerrar sesión</MenuItem>
               </Menu>
             </Stack>
@@ -128,7 +167,16 @@ const Navbar = ({ user: userProp, ...props }) => {
       <NotificationsDialog 
         open={notificationsOpen} 
         onClose={() => setNotificationsOpen(false)} 
+        currentUser={userData}
+        onNotificationRead={handleNotificationRead}
       />
+      {canSendNotifications && (
+        <NotificationModal
+          open={notificationModalOpen}
+          onClose={() => setNotificationModalOpen(false)}
+          currentUser={userData}
+        />
+      )}
     </>
   );
 };

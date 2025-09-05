@@ -44,6 +44,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import dataService from '../../utils/dataService';
 import KanbanBoardNew from '../../components/kanban/KanbanBoardNew';
+import ModernGanttProfessional from '../../components/gantt/ModernGanttProfessional';
 import { useAuth } from '../../context/auth/AuthContext';
 
 const GREEN = '#2AAC26';
@@ -963,48 +964,11 @@ const ProjectDetail = ({ project, onNavigate }) => {
           </CardContent>
         </TabPanel>
 
-        {/* Calendar Tab */}
-        <TabPanel value={activeTab} index={4}>
-          <CardContent>
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <ConstructionIcon sx={{ fontSize: 80, color: '#ccc', mb: 3 }} />
-              <Typography variant="h4" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Poppins, sans-serif', color: '#666' }}>
-                Calendario
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 500, mb: 1, fontFamily: 'Poppins, sans-serif', color: GREEN }}>
-                En Construcción
-              </Typography>
-              <Typography variant="body1" sx={{ fontFamily: 'Poppins, sans-serif', color: '#999', mb: 3, maxWidth: 400, mx: 'auto' }}>
-                Esta funcionalidad estará disponible próximamente. Aquí podrás gestionar eventos, fechas importantes y cronogramas del proyecto.
-              </Typography>
-              <Box sx={{ 
-                bgcolor: '#f8f9fa', 
-                borderRadius: 2, 
-                p: 3, 
-                border: '2px dashed #ddd',
-                maxWidth: 500,
-                mx: 'auto'
-              }}>
-                <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666', mb: 1 }}>
-                  <strong>Próximas características:</strong>
-                </Typography>
-                <Box component="ul" sx={{ textAlign: 'left', m: 0, pl: 2 }}>
-                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
-                    📅 Calendario interactivo del proyecto
-                  </Typography>
-                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
-                    📝 Programación de reuniones
-                  </Typography>
-                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
-                    ⏰ Recordatorios automáticos
-                  </Typography>
-                  <Typography component="li" variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#666' }}>
-                    🎯 Hitos y fechas límite
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </CardContent>
+        {/* Calendar Tab - Gantt Chart */}
+                <TabPanel value={activeTab} index={4}>
+          <Box sx={{ height: '100vh', overflow: 'hidden' }}>
+            <ModernGanttProfessional projectId={project.id} filterByRole={false} />
+          </Box>
         </TabPanel>
       </Card>
 

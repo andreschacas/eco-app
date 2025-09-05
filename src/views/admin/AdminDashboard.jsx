@@ -6,6 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
 import Chip from '@mui/material/Chip';
 import LinearProgress from '@mui/material/LinearProgress';
 import IconButton from '@mui/material/IconButton';
@@ -15,6 +16,11 @@ import FolderIcon from '@mui/icons-material/Folder';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 import dataService from '../../utils/dataService';
 import DashboardWidgets from '../../components/dashboard/DashboardWidgets';
 
@@ -78,6 +84,40 @@ const AdminDashboard = ({ onNavigate }) => {
     const roles = dataService.getAll('roles');
     const role = roles.find(r => r.id === roleId);
     return role ? role.name : 'Desconocido';
+  };
+
+  const getProjectProgress = (project) => {
+    const tasks = dataService.getTasksByProject(project.id);
+    if (tasks.length === 0) return 0;
+    
+    const completedTasks = tasks.filter(t => t.status === 'Completada').length;
+    return Math.round((completedTasks / tasks.length) * 100);
+  };
+
+  const getProjectParticipants = (projectId) => {
+    const participants = dataService.getProjectParticipants(projectId);
+    return participants.slice(0, 3);
+  };
+
+  const getDaysRemaining = (endDate) => {
+    const today = new Date();
+    const end = new Date(endDate);
+    const diffTime = end - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getProjectPriority = (project) => {
+    const tasks = dataService.getTasksByProject(project.id);
+    const overdueTasks = tasks.filter(task => {
+      const dueDate = new Date(task.due_date);
+      const today = new Date();
+      return dueDate < today && task.status !== 'Completada';
+    }).length;
+    
+    if (overdueTasks > 0) return 'high';
+    if (project.status === 'Pausado') return 'low';
+    return 'medium';
   };
 
   if (loading) {
@@ -183,14 +223,11 @@ const AdminDashboard = ({ onNavigate }) => {
         </Grid>
       </Grid>
 
-      <Grid container spacing={3}>
-        {/* Proyectos Recientes */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <CardContent>
+      {/* Proyectos Section - Horizontal Layout */}
+      <Box sx={{ mb: 4 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                  Proyectos Recientes
+          <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+            Proyectos del Sistema
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
@@ -198,10 +235,20 @@ const AdminDashboard = ({ onNavigate }) => {
                     startIcon={<AddIcon />}
                     onClick={() => onNavigate('admin-projects')}
                     sx={{
-                      bgcolor: GREEN,
+                      background: 'linear-gradient(135deg, #2AAC26 0%, #1f9a1f 100%)',
                       textTransform: 'none',
                       fontFamily: 'Poppins, sans-serif',
-                      '&:hover': { bgcolor: '#1f9a1f' }
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      px: 3,
+                      py: 1.5,
+                      boxShadow: '0 4px 12px rgba(42, 172, 38, 0.3)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #1f9a1f 0%, #1a8a1a 100%)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(42, 172, 38, 0.4)'
+                      },
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     Nuevo Proyecto
@@ -214,7 +261,16 @@ const AdminDashboard = ({ onNavigate }) => {
                       color: GREEN,
                       textTransform: 'none',
                       fontFamily: 'Poppins, sans-serif',
-                      '&:hover': { borderColor: '#1f9a1f', bgcolor: '#e8f5e9' }
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      px: 3,
+                      py: 1.5,
+                      '&:hover': { 
+                        borderColor: '#1f9a1f', 
+                        bgcolor: 'rgba(42, 172, 38, 0.04)',
+                        transform: 'translateY(-1px)'
+                      },
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     Ver Todos
@@ -222,53 +278,53 @@ const AdminDashboard = ({ onNavigate }) => {
                 </Box>
               </Box>
 
-              {recentProjects.map((project) => (
-                <Box
-                  key={project.id}
+        {recentProjects.length === 0 ? (
+          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <CardContent sx={{ textAlign: 'center', py: 6 }}>
+              <Typography variant="h6" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                No hay proyectos en el sistema
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif', mt: 1 }}>
+                Crea el primer proyecto para comenzar
+              </Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          <Grid container spacing={3}>
+            {recentProjects.map((project) => {
+              const progress = getProjectProgress(project);
+              const participants = getProjectParticipants(project.id);
+              const daysRemaining = getDaysRemaining(project.end_date);
+              const priority = getProjectPriority(project);
+
+              return (
+                <Grid item xs={12} md={6} lg={4} key={project.id}>
+                  <Card 
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: 2,
-                    mb: 2,
-                    borderRadius: 2,
-                    bgcolor: '#f8f9fa',
-                    '&:hover': { bgcolor: '#e9ecef' },
-                    cursor: 'pointer',
-                    minHeight: 100,
-                    width: '100%'
-                  }}
-                  onClick={() => onNavigate('admin-projects')}
-                >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                      borderRadius: 3, 
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
+                      }
+                    }}
+                  >
+                    <CardContent>
+                      {/* Header */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box sx={{ flex: 1 }}>
                     <Typography 
-                      variant="subtitle1" 
+                            variant="h6" 
                       sx={{ 
                         fontWeight: 600, 
                         fontFamily: 'Poppins, sans-serif',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        mb: 0.5
+                              mb: 0.5,
+                              lineHeight: 1.2
                       }}
                     >
                       {project.name}
                     </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#666', 
-                        fontFamily: 'Poppins, sans-serif',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical'
-                      }}
-                    >
-                      {project.description}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
                       <Chip
                         label={project.status}
                         size="small"
@@ -278,26 +334,110 @@ const AdminDashboard = ({ onNavigate }) => {
                           fontFamily: 'Poppins, sans-serif'
                         }}
                       />
-                      <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                        {new Date(project.start_date).toLocaleDateString('es-ES')} - {new Date(project.end_date).toLocaleDateString('es-ES')}
+                        </Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => onNavigate('admin-projects')}
+                          sx={{ color: GREEN }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Box>
+
+                      {/* Description */}
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#666', 
+                          fontFamily: 'Poppins, sans-serif',
+                          mb: 2,
+                          minHeight: 40,
+                          display: '-webkit-box',
+                          '-webkit-line-clamp': 2,
+                          '-webkit-box-orient': 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {project.description}
+                      </Typography>
+
+                      {/* Progress */}
+                      <Box sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500 }}>
+                            Progreso de Tareas
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: GREEN }}>
+                            {progress}%
                       </Typography>
                     </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={progress}
+                          sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            bgcolor: '#e0e0e0',
+                            '& .MuiLinearProgress-bar': {
+                              bgcolor: GREEN,
+                              borderRadius: 3
+                            }
+                          }}
+                        />
                   </Box>
-                  <IconButton size="small">
-                    <MoreVertIcon />
-                  </IconButton>
+
+                      {/* Timeline */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <CalendarTodayIcon sx={{ fontSize: 16, color: '#666' }} />
+                        <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                          {daysRemaining > 0 ? `${daysRemaining} días restantes` : daysRemaining === 0 ? 'Termina hoy' : `Vencido hace ${Math.abs(daysRemaining)} días`}
+                        </Typography>
                 </Box>
-              ))}
+
+                      {/* Footer */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => onNavigate('admin-projects')}
+                          sx={{
+                            borderColor: GREEN,
+                            color: GREEN,
+                            textTransform: 'none',
+                            fontFamily: 'Poppins, sans-serif',
+                            '&:hover': { borderColor: '#1f9a1f', bgcolor: '#e8f5e9' }
+                          }}
+                        >
+                          Ver Proyecto
+                        </Button>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {participants.length > 0 && (
+                            <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 24, height: 24, fontSize: '12px' } }}>
+                              {participants.map((participant) => (
+                                <Avatar
+                                  key={participant.id} 
+                                  src={participant.avatar} 
+                                  alt={participant.name}
+                                  title={participant.name}
+                                />
+                              ))}
+                            </AvatarGroup>
+                          )}
+                        </Box>
+                      </Box>
             </CardContent>
           </Card>
         </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Box>
 
-        {/* Usuarios Recientes */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <CardContent>
+      {/* Usuarios Recientes - Horizontal */}
+      <Box sx={{ mb: 4 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
                   Usuarios Recientes
                 </Typography>
                 <Button
@@ -315,30 +455,42 @@ const AdminDashboard = ({ onNavigate }) => {
                 </Button>
               </Box>
 
+        <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
               {recentUsers.map((user) => (
-                <Box
+            <Card
                   key={user.id}
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    p: 2,
-                    mb: 2,
-                    borderRadius: 2,
-                    bgcolor: '#f8f9fa',
-                    '&:hover': { bgcolor: '#e9ecef' },
+                minWidth: 280,
+                borderRadius: 3,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
+                },
                     cursor: 'pointer'
                   }}
                   onClick={() => onNavigate('admin-users')}
                 >
-                  <Avatar src={user.avatar} alt={user.name} sx={{ mr: 2 }} />
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Avatar 
+                    src={user.avatar} 
+                    alt={user.name} 
+                    sx={{ 
+                      width: 48, 
+                      height: 48,
+                      border: '3px solid white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }} 
+                  />
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif', mb: 0.5 }}>
                       {user.name}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                    <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 1 }}>
                       {user.email}
                     </Typography>
-                    <Box sx={{ mt: 0.5 }}>
                       <Chip
                         label={getRoleName(user.role_id)}
                         size="small"
@@ -346,17 +498,144 @@ const AdminDashboard = ({ onNavigate }) => {
                           bgcolor: `${getRoleColor(user.role_id)}20`,
                           color: getRoleColor(user.role_id),
                           fontFamily: 'Poppins, sans-serif',
-                          fontSize: '10px'
+                        fontWeight: 500
                         }}
                       />
                     </Box>
-                  </Box>
                 </Box>
-              ))}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      bgcolor: user.active ? '#4caf50' : '#f44336'
+                    }} />
+                    <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                      {user.active ? 'Activo' : 'Inactivo'}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
+                    Última actividad: Hoy
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      </Box>
+
+      {/* Widgets de Sustentabilidad */}
+      <Grid container spacing={3}>
+        {/* Huella de Carbono */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #2AAC26 0%, #1f9a1f 100%)' }}>
+            <CardContent sx={{ color: 'white' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                  Huella de Carbono
+                </Typography>
+                <Box sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Typography sx={{ fontSize: '20px' }}>🌱</Typography>
+                </Box>
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
+                2.4 tCO₂
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
+                Reducido este mes
+              </Typography>
+              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
+                  -15% vs mes anterior
+                </Typography>
+                <TrendingDownIcon sx={{ fontSize: 16, color: '#4caf50' }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Energía Renovable */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' }}>
+            <CardContent sx={{ color: 'white' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                  Energía Renovable
+                </Typography>
+                <Box sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Typography sx={{ fontSize: '20px' }}>⚡</Typography>
+                </Box>
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
+                87%
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
+                De energía limpia utilizada
+              </Typography>
+              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
+                  +5% vs mes anterior
+                </Typography>
+                <TrendingUpIcon sx={{ fontSize: 16, color: '#4caf50' }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Proyectos Verdes */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)' }}>
+            <CardContent sx={{ color: 'white' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                  Proyectos Verdes
+                </Typography>
+                <Box sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Typography sx={{ fontSize: '20px' }}>🌿</Typography>
+                </Box>
+              </Box>
+              <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
+                {stats.totalProjects || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
+                Proyectos sustentables activos
+              </Typography>
+              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
+                  {stats.activeProjects || 0} en progreso
+                </Typography>
+                <CheckCircleIcon sx={{ fontSize: 16, color: '#4caf50' }} />
+              </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
       
       {/* Widgets Section */}
       <Box sx={{ mt: 6 }}>

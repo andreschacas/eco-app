@@ -73,7 +73,10 @@ const Auth = () => {
         <Box sx={{ width: '100%', maxWidth: 420 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <img src={logo} alt="Logo" style={{ width: 32, height: 32, marginRight: 10 }} />
-            <span style={{ fontWeight: 700, color: '#111', fontSize: 22, fontFamily: 'Poppins, sans-serif', letterSpacing: 0.5 }}>ECO</span>
+            <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: 22, letterSpacing: 0.5 }}>
+              <span style={{ fontWeight: 700, color: '#2AAC26' }}>Green</span>
+              <span style={{ fontWeight: 700, color: '#121212' }}>Tech</span>
+            </span>
           </Box>
           <Paper elevation={0} sx={{ p: 4, borderRadius: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', bgcolor: '#fff' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
@@ -219,7 +222,7 @@ const Auth = () => {
       }}>
         <Box sx={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff', px: 4 }}>
           <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins, sans-serif' }}>
-            Bienvenido a ECO
+            Bienvenido a <span style={{ color: '#2AAC26' }}>Green</span><span style={{ color: '#fff' }}>Tech</span>
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
             Gestiona tus proyectos sostenibles de manera eficiente

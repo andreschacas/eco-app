@@ -27,6 +27,8 @@ import CoordinatorProjects from './views/coordinator/CoordinatorProjects';
 import CoordinatorMetrics from './views/coordinator/CoordinatorMetrics';
 import CoordinatorParticipants from './views/coordinator/CoordinatorParticipants';
 import ParticipantProjects from './views/participant/ParticipantProjects';
+import CalendarView from './views/CalendarView';
+import GanttView from './views/GanttView';
 
 // Nuevos componentes avanzados
 import ProjectDetailSimple from './views/common/ProjectDetailSimple';
@@ -63,13 +65,17 @@ const VIEWS = {
   USER_PROFILE: 'user-profile',
   PARTICIPANT_DASHBOARD: 'participant-dashboard',
   PARTICIPANT_KANBAN: 'participant-kanban',
-  PARTICIPANT_PROJECTS: 'participant-projects'
+  PARTICIPANT_PROJECTS: 'participant-projects',
+  CALENDAR: 'calendar',
+  GANTT: 'gantt'
 };
 
 function MainApp() {
   const [view, setView] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [viewParams, setViewParams] = useState({});
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, getDefaultView, loading } = useAuth();
 
   // Set default view based on user role
@@ -94,7 +100,17 @@ function MainApp() {
 
   // Navigation handler with advanced routing
   const handleNavigate = (newView, params = null) => {
-    setView(newView);
+    // Mapear claves del sidebar a vistas
+    let viewKey = newView;
+    if (newView === 'calendar') {
+      viewKey = VIEWS.CALENDAR;
+    } else if (newView === 'gantt') {
+      viewKey = VIEWS.GANTT;
+    } else if (newView === 'home') {
+      viewKey = getDefaultView();
+    }
+    
+    setView(viewKey);
     setViewParams(params || {});
     
     // Legacy support for project navigation
@@ -105,6 +121,16 @@ function MainApp() {
         setSelectedProject(params);
       }
     }
+  };
+
+  // Calendar navigation handler
+  const handleCalendarNavigation = (newDate) => {
+    setCalendarDate(newDate);
+  };
+
+  // Sidebar toggle handler
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
   };
 
   let content;
@@ -150,8 +176,12 @@ function MainApp() {
     content = <ParticipantDashboard onNavigate={handleNavigate} />;
   } else if (view === VIEWS.PARTICIPANT_KANBAN) {
     content = <KanbanBoardNew filterByRole={true} highlightTask={viewParams.highlightTask} />;
-  } else if (view === VIEWS.PARTICIPANT_PROJECTS) {
+  }   else if (view === VIEWS.PARTICIPANT_PROJECTS) {
     content = <ParticipantProjects onNavigate={handleNavigate} />;
+  } else if (view === VIEWS.CALENDAR) {
+    content = <CalendarView />;
+  } else if (view === VIEWS.GANTT) {
+    content = <GanttView />;
   } else if (view === VIEWS.SETTINGS) {
     content = <SettingsView onNavigate={handleNavigate} />;
   }
@@ -184,7 +214,14 @@ function MainApp() {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f6fa' }}>
       <CssBaseline />
-      <Sidebar onNavigate={handleNavigate} current={view} user={user} />
+      <Sidebar 
+        onNavigate={handleNavigate} 
+        current={view} 
+        user={user} 
+        onCalendarNavigation={handleCalendarNavigation}
+        onToggleSidebar={handleToggleSidebar}
+        sidebarCollapsed={sidebarCollapsed}
+      />
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <NavbarAdvanced onNavigate={handleNavigate} current={view} />
         <Box sx={{ flex: 1, p: 3 }}>{content}</Box>

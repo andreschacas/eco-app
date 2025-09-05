@@ -47,6 +47,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import dataService from '../../utils/dataService';
 import { useAuth } from '../../context/auth/AuthContext';
+import eventBus from '../../utils/eventBus';
 
 const GREEN = '#2AAC26';
 
@@ -367,7 +368,7 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
 
   useEffect(() => {
     loadData();
-  }, [user, projectId, userId]);
+  }, [user, projectId, userId, filterByRole]);
 
   const loadData = () => {
     try {
@@ -382,7 +383,7 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
       if (filterByRole && user) {
         switch (user.role) {
           case 'Administrador':
-            // Administrador ve todas las tareas (ya filtradas por proyecto si aplica)
+            // Administrador ve TODAS las tareas (incluye tareas sin participantes)
             break;
           case 'Coordinador':
             if (!projectId) {
@@ -391,9 +392,10 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
               const projectIds = coordinatorProjects.map(p => p.id);
               allTasks = allTasks.filter(task => projectIds.includes(task.project_id));
             }
-            // Si hay projectId, ya se filtró arriba
+            // Coordinador ve TODAS las tareas del proyecto (incluye tareas sin participantes)
             break;
           case 'Participante':
+            // Participantes SOLO ven sus tareas asignadas
             if (userId) {
               // Tareas asignadas a un usuario específico (dentro del proyecto si aplica)
               const userTasks = dataService.getTasksByUser(userId);
@@ -415,6 +417,10 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
       }
 
       setTasks(allTasks);
+      
+      // Debug: Verificar tareas cargadas
+      console.log('Kanban - Tareas cargadas:', allTasks.length, 'para proyecto:', projectId);
+      console.log('Kanban - Tareas:', allTasks.map(t => ({ id: t.id, title: t.title, project_id: t.project_id, due_date: t.due_date })));
       
       // Cargar proyectos y usuarios para los formularios
       const allProjects = dataService.getAll('projects');
@@ -540,6 +546,10 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
       if (editingTask) {
         dataService.update('tasks', editingTask.id, taskData);
         showSnackbar('Tarea actualizada exitosamente', 'success');
+        
+        // Emitir evento de actualización
+        console.log('Kanban - Emitiendo evento taskUpdated:', { taskId: editingTask.id, taskData, projectId });
+        eventBus.emit('taskUpdated', { taskId: editingTask.id, taskData, projectId });
       } else {
         const newTask = dataService.create('tasks', taskData);
         
@@ -551,6 +561,10 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
         }
         
         showSnackbar('Tarea creada exitosamente', 'success');
+        
+        // Emitir evento de creación
+        console.log('Kanban - Emitiendo evento taskCreated:', { taskId: newTask.id, taskData: newTask, projectId });
+        eventBus.emit('taskCreated', { taskId: newTask.id, taskData: newTask, projectId });
       }
 
       loadData();
@@ -564,6 +578,11 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
     try {
       dataService.delete('tasks', taskId);
       showSnackbar('Tarea eliminada exitosamente', 'success');
+      
+      // Emitir evento de eliminación
+      console.log('Kanban - Emitiendo evento taskDeleted:', { taskId, projectId });
+      eventBus.emit('taskDeleted', { taskId, projectId });
+      
       loadData();
     } catch (error) {
       showSnackbar('Error al eliminar la tarea', 'error');

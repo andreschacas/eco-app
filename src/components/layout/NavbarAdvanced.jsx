@@ -22,6 +22,7 @@ import Fade from '@mui/material/Fade';
 import Popper from '@mui/material/Popper';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import CircularProgress from '@mui/material/CircularProgress';
+import Badge from '@mui/material/Badge';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -33,6 +34,7 @@ import { useAuth } from '../../context/auth/AuthContext';
 import dataService from '../../utils/dataService';
 import CalendarDialog from '../common/CalendarDialog';
 import NotificationsDialog from '../common/NotificationsDialog';
+import notificationService from '../../utils/notificationService';
 
 const GREEN = '#2AAC26';
 
@@ -41,6 +43,7 @@ const NavbarAdvanced = ({ onNavigate, ...props }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   // Estado para búsqueda global
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +51,32 @@ const NavbarAdvanced = ({ onNavigate, ...props }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef(null);
+
+  // Cargar contador de notificaciones no leídas
+  useEffect(() => {
+    const loadUnreadCount = () => {
+      if (user?.id) {
+        const count = notificationService.getUnreadCountByUser(user.id);
+        setUnreadCount(count);
+      }
+    };
+
+    loadUnreadCount();
+    
+    // Actualizar cada 30 segundos
+    const interval = setInterval(loadUnreadCount, 30000);
+    
+    return () => clearInterval(interval);
+  }, [notificationsOpen, user?.id]);
+
+  // Función para actualizar el contador cuando se marquen notificaciones como leídas
+  const handleNotificationRead = () => {
+    if (user?.id) {
+      const count = notificationService.getUnreadCountByUser(user.id);
+      setUnreadCount(count);
+    }
+  };
+
   
   const handleMenu = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -526,7 +555,9 @@ const NavbarAdvanced = ({ onNavigate, ...props }) => {
               }}
               onClick={() => setNotificationsOpen(true)}
             >
-              <NotificationsNoneIcon sx={{ fontSize: 24 }} />
+              <Badge badgeContent={unreadCount} color="error" max={99}>
+                <NotificationsNoneIcon sx={{ fontSize: 24 }} />
+              </Badge>
             </IconButton>
             
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -609,6 +640,8 @@ const NavbarAdvanced = ({ onNavigate, ...props }) => {
       <NotificationsDialog 
         open={notificationsOpen} 
         onClose={() => setNotificationsOpen(false)} 
+        currentUser={user}
+        onNotificationRead={handleNotificationRead}
       />
 
       {/* Estilos CSS para animaciones */}

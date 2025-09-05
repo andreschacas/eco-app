@@ -84,8 +84,8 @@ const INITIAL_DATA = {
       id: 1,
       name: 'Tesis Huella de Carbono',
       description: 'Investigación sobre la huella de carbono en procesos industriales',
-      start_date: '2024-01-15',
-      end_date: '2024-12-15',
+      start_date: '2025-01-15',
+      end_date: '2025-12-15',
       status: 'En progreso',
       creator_id: 2,
       created_at: new Date().toISOString()
@@ -94,8 +94,8 @@ const INITIAL_DATA = {
       id: 2,
       name: 'Pared Verde Sustentable',
       description: 'Implementación de muros verdes para reducir la temperatura urbana',
-      start_date: '2024-02-01',
-      end_date: '2024-11-30',
+      start_date: '2025-02-01',
+      end_date: '2025-11-30',
       status: 'En progreso',
       creator_id: 2,
       created_at: new Date().toISOString()
@@ -104,7 +104,7 @@ const INITIAL_DATA = {
       id: 3,
       name: 'Tesis Huella Hídrica',
       description: 'Análisis del consumo de agua en la agricultura local',
-      start_date: '2024-03-01',
+      start_date: '2025-03-01',
       end_date: '2025-02-28',
       status: 'Planificación',
       creator_id: 2,
@@ -261,70 +261,215 @@ const INITIAL_DATA = {
   ],
 
   tasks: [
+    // Tareas de ejemplo basadas en la imagen de referencia
     {
       id: 1,
-      title: 'Análisis de Emisiones CO2',
-      description: 'Realizar medición y análisis de las emisiones de carbono del proyecto',
-      status: 'En progreso',
+      title: 'Finalizar nombre del evento',
+      description: 'Definir y aprobar el nombre final para el evento de sostenibilidad',
+      status: 'Completada',
       priority: 'Alta',
-      due_date: '2024-02-15',
+      due_date: '2025-01-15',
       project_id: 1,
-      assigned_users: [3, 4],
+      assigned_users: [3],
       created_at: new Date().toISOString()
     },
     {
       id: 2,
-      title: 'Instalación de Sensores',
-      description: 'Colocar sensores de monitoreo ambiental en las ubicaciones designadas',
-      status: 'Pendiente',
-      priority: 'Media',
-      due_date: '2024-02-20',
+      title: 'Finalizar presupuesto del evento',
+      description: 'Completar el presupuesto detallado para todas las actividades del evento',
+      status: 'En progreso',
+      priority: 'Crítica',
+      due_date: '2025-01-20',
       project_id: 1,
-      assigned_users: [3],
+      assigned_users: [4],
       created_at: new Date().toISOString()
     },
     {
       id: 3,
-      title: 'Reporte Mensual',
-      description: 'Generar reporte mensual de progreso del proyecto',
-      status: 'Completada',
-      priority: 'Media',
-      due_date: '2024-01-31',
+      title: 'Proponer 3 ideas de keynote para conferencia',
+      description: 'Desarrollar y presentar tres propuestas de temas principales para la conferencia',
+      status: 'En progreso',
+      priority: 'Alta',
+      due_date: '2025-01-25',
+      project_id: 1,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 4,
+      title: 'Reclutar tres oradores para conferencia',
+      description: 'Identificar y contactar tres oradores expertos en sostenibilidad',
+      status: 'Pendiente',
+      priority: 'Alta',
+      due_date: '2025-02-05',
       project_id: 1,
       assigned_users: [4],
       created_at: new Date().toISOString()
     },
     {
-      id: 4,
-      title: 'Diseño de Pared Verde',
-      description: 'Crear diseño arquitectónico para la implementación del muro verde',
+      id: 5,
+      title: 'Contactar oradores invitados potenciales',
+      description: 'Llegar a oradores invitados potenciales para el evento',
+      status: 'Pendiente',
+      priority: 'Media',
+      due_date: '2025-01-30',
+      project_id: 1,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 6,
+      title: 'Mapear estrategia de sesiones de trabajo',
+      description: 'Desarrollar la estrategia detallada para las sesiones de trabajo del evento',
+      status: 'Pendiente',
+      priority: 'Media',
+      due_date: '2025-02-10',
+      project_id: 1,
+      assigned_users: [4],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 7,
+      title: 'Asegurar panel de oradores',
+      description: 'Confirmar la participación de todos los oradores del panel principal',
+      status: 'Pendiente',
+      priority: 'Alta',
+      due_date: '2025-02-15',
+      project_id: 1,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 8,
+      title: 'Programar sesiones de trabajo',
+      description: 'Organizar y programar todas las sesiones de trabajo del evento',
+      status: 'En progreso',
+      priority: 'Media',
+      due_date: '2025-01-25',
+      project_id: 1,
+      assigned_users: [4],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 9,
+      title: 'Explorar ideas de tema del evento',
+      description: 'Investigar y desarrollar ideas creativas para el tema principal del evento',
+      status: 'Pendiente',
+      priority: 'Media',
+      due_date: '2025-02-25',
+      project_id: 1,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 10,
+      title: 'Programar evento principal',
+      description: 'Coordinar y programar el evento principal de sostenibilidad',
+      status: 'Completada',
+      priority: 'Alta',
+      due_date: '2025-03-01',
+      project_id: 1,
+      assigned_users: [4],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 11,
+      title: 'Diseñar logo y marca del evento',
+      description: 'Crear el diseño del logo y elementos de marca para el evento',
+      status: 'Pendiente',
+      priority: 'Media',
+      due_date: '2025-02-15',
+      project_id: 1,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 12,
+      title: 'Finalizar agenda del evento',
+      description: 'Completar y aprobar la agenda final del evento de sostenibilidad',
+      status: 'Pendiente',
+      priority: 'Alta',
+      due_date: '2025-02-15',
+      project_id: 1,
+      assigned_users: [4],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 13,
+      title: 'Finalizar agenda de sesiones',
+      description: 'Completar la agenda detallada para todas las sesiones del evento',
+      status: 'Pendiente',
+      priority: 'Media',
+      due_date: '2025-03-15',
+      project_id: 1,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    // Tareas adicionales para otros proyectos
+    {
+      id: 14,
+      title: 'Análisis de Emisiones CO2',
+      description: 'Realizar medición y análisis de las emisiones de carbono del proyecto',
       status: 'En progreso',
       priority: 'Alta',
-      due_date: '2024-02-25',
+      due_date: '2025-03-20',
+      project_id: 2,
+      assigned_users: [3, 4],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 15,
+      title: 'Instalación de Sensores',
+      description: 'Colocar sensores de monitoreo ambiental en las ubicaciones designadas',
+      status: 'Pendiente',
+      priority: 'Media',
+      due_date: '2025-03-25',
       project_id: 2,
       assigned_users: [3],
       created_at: new Date().toISOString()
     },
     {
-      id: 5,
+      id: 16,
+      title: 'Diseño de Pared Verde',
+      description: 'Crear diseño arquitectónico para la implementación del muro verde',
+      status: 'En progreso',
+      priority: 'Alta',
+      due_date: '2025-04-01',
+      project_id: 2,
+      assigned_users: [3],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 17,
       title: 'Selección de Plantas',
       description: 'Investigar y seleccionar especies de plantas adecuadas para el clima local',
       status: 'Pendiente',
       priority: 'Media',
-      due_date: '2024-03-01',
+      due_date: '2025-04-05',
       project_id: 2,
       assigned_users: [4],
       created_at: new Date().toISOString()
     },
     {
-      id: 6,
+      id: 18,
       title: 'Análisis de Consumo Hídrico',
       description: 'Estudiar patrones de consumo de agua en la región',
       status: 'Pendiente',
       priority: 'Crítica',
-      due_date: '2024-02-10',
+      due_date: '2025-02-25',
       project_id: 3,
       assigned_users: [3, 4],
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 19,
+      title: 'Documentación Técnica',
+      description: 'Crear documentación técnica completa del sistema',
+      status: 'Completada',
+      priority: 'Media',
+      due_date: '2025-03-01',
+      project_id: 3,
+      assigned_users: [4],
       created_at: new Date().toISOString()
     }
   ],
@@ -339,14 +484,28 @@ const INITIAL_DATA = {
   ],
 
   taskAssignments: [
+    // Asignaciones para las nuevas tareas de ejemplo
     { id: 1, task_id: 1, user_id: 3, assigned_at: new Date().toISOString() },
-    { id: 2, task_id: 1, user_id: 4, assigned_at: new Date().toISOString() },
-    { id: 3, task_id: 2, user_id: 3, assigned_at: new Date().toISOString() },
-    { id: 4, task_id: 3, user_id: 4, assigned_at: new Date().toISOString() },
-    { id: 5, task_id: 4, user_id: 3, assigned_at: new Date().toISOString() },
-    { id: 6, task_id: 5, user_id: 4, assigned_at: new Date().toISOString() },
-    { id: 7, task_id: 6, user_id: 3, assigned_at: new Date().toISOString() },
-    { id: 8, task_id: 6, user_id: 4, assigned_at: new Date().toISOString() }
+    { id: 2, task_id: 2, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 3, task_id: 3, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 4, task_id: 4, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 5, task_id: 5, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 6, task_id: 6, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 7, task_id: 7, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 8, task_id: 8, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 9, task_id: 9, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 10, task_id: 10, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 11, task_id: 11, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 12, task_id: 12, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 13, task_id: 13, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 14, task_id: 14, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 15, task_id: 14, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 16, task_id: 15, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 17, task_id: 16, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 18, task_id: 17, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 19, task_id: 18, user_id: 3, assigned_at: new Date().toISOString() },
+    { id: 20, task_id: 18, user_id: 4, assigned_at: new Date().toISOString() },
+    { id: 21, task_id: 19, user_id: 4, assigned_at: new Date().toISOString() }
   ],
 
   comments: [
@@ -382,6 +541,14 @@ class DataService {
     }
     if (!localStorage.getItem(STORAGE_KEYS.METRICS)) {
       localStorage.setItem(STORAGE_KEYS.METRICS, JSON.stringify(INITIAL_DATA.metrics));
+    }
+    
+    // Inicializar notificaciones de ejemplo
+    try {
+      const notificationService = require('./notificationService').default;
+      notificationService.createSampleNotifications();
+    } catch (error) {
+      // Silencioso - las notificaciones son opcionales
     }
     if (!localStorage.getItem(STORAGE_KEYS.COMMENTS)) {
       localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(INITIAL_DATA.comments));

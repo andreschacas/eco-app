@@ -1,0 +1,526 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "Evento de Sostenibilidad Q4",
+      "description": "Organización completa del evento de sostenibilidad para el cuarto trimestre",
+      "status": "En progreso",
+      "start_date": "2025-09-01",
+      "end_date": "2025-09-30",
+      "coordinator_id": 2,
+      "budget": 50000,
+      "progress": 65
+    },
+    {
+      "id": 2,
+      "name": "Sistema de Monitoreo Ambiental",
+      "description": "Implementación de sistema de sensores para monitoreo ambiental",
+      "status": "En progreso",
+      "start_date": "2025-09-15",
+      "end_date": "2025-12-15",
+      "coordinator_id": 2,
+      "budget": 75000,
+      "progress": 30
+    },
+    {
+      "id": 3,
+      "name": "Iniciativa de Ahorro Hídrico",
+      "description": "Proyecto para optimizar el consumo de agua en las instalaciones",
+      "status": "Pendiente",
+      "start_date": "2025-10-01",
+      "end_date": "2025-11-30",
+      "coordinator_id": 2,
+      "budget": 30000,
+      "progress": 10
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@greentech.com",
+      "role": "Administrador",
+      "avatar": "A",
+      "department": "Administración"
+    },
+    {
+      "id": 2,
+      "name": "María García",
+      "email": "maria@greentech.com",
+      "role": "Coordinador",
+      "avatar": "M",
+      "department": "Gestión de Proyectos"
+    },
+    {
+      "id": 3,
+      "name": "Elena Rodríguez",
+      "email": "elena@greentech.com",
+      "role": "Participante",
+      "avatar": "E",
+      "department": "Sostenibilidad"
+    },
+    {
+      "id": 4,
+      "name": "Miguel Torres",
+      "email": "miguel@greentech.com",
+      "role": "Participante",
+      "avatar": "M",
+      "department": "Tecnología"
+    },
+    {
+      "id": 5,
+      "name": "Ana López",
+      "email": "ana@greentech.com",
+      "role": "Participante",
+      "avatar": "A",
+      "department": "Marketing"
+    },
+    {
+      "id": 6,
+      "name": "Carlos Ruiz",
+      "email": "carlos@greentech.com",
+      "role": "Participante",
+      "avatar": "C",
+      "department": "Operaciones"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Finalizar nombre del evento",
+      "description": "Definir y aprobar el nombre final para el evento de sostenibilidad, considerando el branding corporativo",
+      "status": "Completada",
+      "priority": "Alta",
+      "due_date": "2025-09-06",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 100,
+      "created_at": "2025-09-01T10:00:00.000Z",
+      "estimated_hours": 8,
+      "actual_hours": 8,
+      "tags": ["branding", "evento"]
+    },
+    {
+      "id": 2,
+      "title": "Finalizar presupuesto del evento",
+      "description": "Completar el presupuesto detallado para todas las actividades del evento, incluyendo catering, logística y marketing",
+      "status": "En progreso",
+      "priority": "Crítica",
+      "due_date": "2025-09-07",
+      "project_id": 1,
+      "assigned_users": [4],
+      "progress": 75,
+      "created_at": "2025-09-01T10:00:00.000Z",
+      "estimated_hours": 16,
+      "actual_hours": 12,
+      "tags": ["finanzas", "evento"]
+    },
+    {
+      "id": 3,
+      "title": "Proponer 3 ideas de keynote para conferencia",
+      "description": "Desarrollar y presentar tres propuestas de temas principales para la conferencia, enfocadas en sostenibilidad",
+      "status": "En progreso",
+      "priority": "Alta",
+      "due_date": "2025-09-09",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 60,
+      "created_at": "2025-09-02T10:00:00.000Z",
+      "estimated_hours": 12,
+      "actual_hours": 7,
+      "tags": ["contenido", "conferencia"]
+    },
+    {
+      "id": 4,
+      "title": "Reclutar tres oradores para conferencia",
+      "description": "Identificar y contactar tres oradores expertos en sostenibilidad para la conferencia principal",
+      "status": "Pendiente",
+      "priority": "Alta",
+      "due_date": "2025-09-13",
+      "project_id": 1,
+      "assigned_users": [4],
+      "progress": 25,
+      "created_at": "2025-09-03T10:00:00.000Z",
+      "estimated_hours": 20,
+      "actual_hours": 5,
+      "tags": ["oradores", "conferencia"]
+    },
+    {
+      "id": 5,
+      "title": "Contactar oradores invitados potenciales",
+      "description": "Llegar a oradores invitados potenciales para el evento, incluyendo seguimiento y negociación",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-11",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 15,
+      "created_at": "2025-09-04T10:00:00.000Z",
+      "estimated_hours": 15,
+      "actual_hours": 2,
+      "tags": ["networking", "oradores"]
+    },
+    {
+      "id": 6,
+      "title": "Mapear estrategia de sesiones de trabajo",
+      "description": "Desarrollar la estrategia detallada para las sesiones de trabajo del evento, incluyendo metodologías y objetivos",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-10",
+      "project_id": 1,
+      "assigned_users": [4],
+      "progress": 40,
+      "created_at": "2025-09-05T10:00:00.000Z",
+      "estimated_hours": 18,
+      "actual_hours": 7,
+      "tags": ["estrategia", "workshops"]
+    },
+    {
+      "id": 7,
+      "title": "Asegurar panel de oradores",
+      "description": "Confirmar la participación de todos los oradores del panel principal y coordinar logística",
+      "status": "Pendiente",
+      "priority": "Alta",
+      "due_date": "2025-09-16",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 10,
+      "created_at": "2025-09-06T10:00:00.000Z",
+      "estimated_hours": 10,
+      "actual_hours": 1,
+      "tags": ["coordinación", "panel"]
+    },
+    {
+      "id": 8,
+      "title": "Programar sesiones de trabajo",
+      "description": "Organizar y programar todas las sesiones de trabajo del evento, incluyendo horarios y espacios",
+      "status": "En progreso",
+      "priority": "Media",
+      "due_date": "2025-09-09",
+      "project_id": 1,
+      "assigned_users": [4],
+      "progress": 55,
+      "created_at": "2025-09-07T10:00:00.000Z",
+      "estimated_hours": 14,
+      "actual_hours": 8,
+      "tags": ["programación", "logística"]
+    },
+    {
+      "id": 9,
+      "title": "Explorar ideas de tema del evento",
+      "description": "Investigar y desarrollar ideas creativas para el tema principal del evento de sostenibilidad",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-12",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 30,
+      "created_at": "2025-09-08T10:00:00.000Z",
+      "estimated_hours": 12,
+      "actual_hours": 4,
+      "tags": ["creatividad", "tema"]
+    },
+    {
+      "id": 10,
+      "title": "Programar evento principal",
+      "description": "Coordinar y programar el evento principal de sostenibilidad, incluyendo todos los detalles logísticos",
+      "status": "Completada",
+      "priority": "Alta",
+      "due_date": "2025-09-08",
+      "project_id": 1,
+      "assigned_users": [4],
+      "progress": 100,
+      "created_at": "2025-09-09T10:00:00.000Z",
+      "estimated_hours": 16,
+      "actual_hours": 16,
+      "tags": ["coordinación", "evento"]
+    },
+    {
+      "id": 11,
+      "title": "Diseñar logo y marca del evento",
+      "description": "Crear el diseño del logo y elementos de marca para el evento, manteniendo consistencia con la marca corporativa",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-16",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 20,
+      "created_at": "2025-09-10T10:00:00.000Z",
+      "estimated_hours": 20,
+      "actual_hours": 4,
+      "tags": ["diseño", "branding"]
+    },
+    {
+      "id": 12,
+      "title": "Finalizar agenda del evento",
+      "description": "Completar y aprobar la agenda final del evento de sostenibilidad, incluyendo todos los detalles",
+      "status": "Pendiente",
+      "priority": "Alta",
+      "due_date": "2025-09-16",
+      "project_id": 1,
+      "assigned_users": [4],
+      "progress": 35,
+      "created_at": "2025-09-11T10:00:00.000Z",
+      "estimated_hours": 12,
+      "actual_hours": 4,
+      "tags": ["agenda", "planificación"]
+    },
+    {
+      "id": 13,
+      "title": "Finalizar agenda de sesiones",
+      "description": "Completar la agenda detallada para todas las sesiones del evento, incluyendo horarios y contenidos",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-19",
+      "project_id": 1,
+      "assigned_users": [3],
+      "progress": 15,
+      "created_at": "2025-09-12T10:00:00.000Z",
+      "estimated_hours": 15,
+      "actual_hours": 2,
+      "tags": ["sesiones", "detalle"]
+    },
+    {
+      "id": 14,
+      "title": "Análisis de Emisiones CO2",
+      "description": "Realizar medición y análisis completo de las emisiones de carbono del proyecto de monitoreo",
+      "status": "En progreso",
+      "priority": "Alta",
+      "due_date": "2025-09-15",
+      "project_id": 2,
+      "assigned_users": [3, 4],
+      "progress": 45,
+      "created_at": "2025-09-13T10:00:00.000Z",
+      "estimated_hours": 24,
+      "actual_hours": 11,
+      "tags": ["análisis", "emisiones", "CO2"]
+    },
+    {
+      "id": 15,
+      "title": "Instalación de Sensores",
+      "description": "Colocar sensores de monitoreo ambiental en las ubicaciones designadas del proyecto",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-20",
+      "project_id": 2,
+      "assigned_users": [3],
+      "progress": 10,
+      "created_at": "2025-09-14T10:00:00.000Z",
+      "estimated_hours": 32,
+      "actual_hours": 3,
+      "tags": ["instalación", "sensores", "hardware"]
+    },
+    {
+      "id": 16,
+      "title": "Diseño de Pared Verde",
+      "description": "Crear diseño arquitectónico completo para la implementación del muro verde en las instalaciones",
+      "status": "En progreso",
+      "priority": "Alta",
+      "due_date": "2025-09-24",
+      "project_id": 2,
+      "assigned_users": [3],
+      "progress": 70,
+      "created_at": "2025-09-15T10:00:00.000Z",
+      "estimated_hours": 28,
+      "actual_hours": 20,
+      "tags": ["diseño", "arquitectura", "verde"]
+    },
+    {
+      "id": 17,
+      "title": "Selección de Plantas",
+      "description": "Investigar y seleccionar especies de plantas adecuadas para el clima local y el muro verde",
+      "status": "Pendiente",
+      "priority": "Media",
+      "due_date": "2025-09-29",
+      "project_id": 2,
+      "assigned_users": [4],
+      "progress": 25,
+      "created_at": "2025-09-16T10:00:00.000Z",
+      "estimated_hours": 16,
+      "actual_hours": 4,
+      "tags": ["plantas", "selección", "botánica"]
+    },
+    {
+      "id": 18,
+      "title": "Análisis de Consumo Hídrico",
+      "description": "Estudiar patrones de consumo de agua en la región para optimizar el uso de recursos hídricos",
+      "status": "Pendiente",
+      "priority": "Crítica",
+      "due_date": "2025-09-12",
+      "project_id": 3,
+      "assigned_users": [3, 4],
+      "progress": 20,
+      "created_at": "2025-09-17T10:00:00.000Z",
+      "estimated_hours": 20,
+      "actual_hours": 4,
+      "tags": ["agua", "análisis", "optimización"]
+    },
+    {
+      "id": 19,
+      "title": "Documentación Técnica",
+      "description": "Crear documentación técnica completa del sistema de monitoreo ambiental",
+      "status": "Completada",
+      "priority": "Media",
+      "due_date": "2025-09-08",
+      "project_id": 3,
+      "assigned_users": [4],
+      "progress": 100,
+      "created_at": "2025-09-18T10:00:00.000Z",
+      "estimated_hours": 12,
+      "actual_hours": 12,
+      "tags": ["documentación", "técnica", "manuales"]
+    }
+  ],
+  "dependencies": [
+    {
+      "id": 1,
+      "from_task": 1,
+      "to_task": 2,
+      "type": "finish-to-start",
+      "description": "El presupuesto depende del nombre final del evento"
+    },
+    {
+      "id": 2,
+      "from_task": 2,
+      "to_task": 3,
+      "type": "finish-to-start",
+      "description": "Las ideas de keynote requieren presupuesto aprobado"
+    },
+    {
+      "id": 3,
+      "from_task": 3,
+      "to_task": 4,
+      "type": "finish-to-start",
+      "description": "El reclutamiento de oradores depende de las ideas definidas"
+    },
+    {
+      "id": 4,
+      "from_task": 4,
+      "to_task": 7,
+      "type": "finish-to-start",
+      "description": "Asegurar panel requiere oradores reclutados"
+    },
+    {
+      "id": 5,
+      "from_task": 5,
+      "to_task": 4,
+      "type": "start-to-start",
+      "description": "Contactar invitados y reclutar oradores en paralelo"
+    },
+    {
+      "id": 6,
+      "from_task": 6,
+      "to_task": 8,
+      "type": "finish-to-start",
+      "description": "Programar sesiones requiere estrategia definida"
+    },
+    {
+      "id": 7,
+      "from_task": 8,
+      "to_task": 9,
+      "type": "finish-to-start",
+      "description": "Explorar tema requiere sesiones programadas"
+    },
+    {
+      "id": 8,
+      "from_task": 10,
+      "to_task": 11,
+      "type": "finish-to-start",
+      "description": "Diseñar logo requiere evento programado"
+    },
+    {
+      "id": 9,
+      "from_task": 11,
+      "to_task": 12,
+      "type": "finish-to-start",
+      "description": "Finalizar agenda requiere logo diseñado"
+    },
+    {
+      "id": 10,
+      "from_task": 12,
+      "to_task": 13,
+      "type": "finish-to-start",
+      "description": "Agenda de sesiones requiere agenda principal"
+    }
+  ],
+  "milestones": [
+    {
+      "id": 1,
+      "title": "Nombre del evento aprobado",
+      "date": "2025-09-06",
+      "project_id": 1,
+      "task_id": 1,
+      "description": "Hito clave: Nombre oficial del evento definido y aprobado"
+    },
+    {
+      "id": 2,
+      "title": "Presupuesto finalizado",
+      "date": "2025-09-07",
+      "project_id": 1,
+      "task_id": 2,
+      "description": "Hito financiero: Presupuesto completo aprobado"
+    },
+    {
+      "id": 3,
+      "title": "Oradores confirmados",
+      "date": "2025-09-13",
+      "project_id": 1,
+      "task_id": 4,
+      "description": "Hito de contenido: Todos los oradores principales confirmados"
+    },
+    {
+      "id": 4,
+      "title": "Panel de oradores asegurado",
+      "date": "2025-09-16",
+      "project_id": 1,
+      "task_id": 7,
+      "description": "Hito de coordinación: Panel principal completamente asegurado"
+    },
+    {
+      "id": 5,
+      "title": "Agenda del evento finalizada",
+      "date": "2025-09-16",
+      "project_id": 1,
+      "task_id": 12,
+      "description": "Hito de planificación: Agenda final aprobada y publicada"
+    },
+    {
+      "id": 6,
+      "title": "Sensores instalados",
+      "date": "2025-09-20",
+      "project_id": 2,
+      "task_id": 15,
+      "description": "Hito técnico: Sistema de sensores completamente instalado"
+    },
+    {
+      "id": 7,
+      "title": "Diseño de pared verde completado",
+      "date": "2025-09-24",
+      "project_id": 2,
+      "task_id": 16,
+      "description": "Hito de diseño: Diseño arquitectónico finalizado"
+    }
+  ],
+  "tags": [
+    "evento",
+    "sostenibilidad",
+    "conferencia",
+    "oradores",
+    "branding",
+    "logística",
+    "finanzas",
+    "marketing",
+    "análisis",
+    "emisiones",
+    "CO2",
+    "sensores",
+    "monitoreo",
+    "agua",
+    "optimización",
+    "diseño",
+    "arquitectura",
+    "plantas",
+    "documentación",
+    "técnica"
+  ]
+}

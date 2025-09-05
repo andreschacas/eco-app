@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -21,6 +21,9 @@ import EventIcon from '@mui/icons-material/Event';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SendIcon from '@mui/icons-material/Send';
+import notificationService from '../../utils/notificationService';
+import NotificationModal from '../notifications/NotificationModal';
 
 const GREEN = '#2AAC26';
 
@@ -95,30 +98,31 @@ const sampleNotifications = [
 
 const getNotificationIcon = (type) => {
   switch (type) {
-    case 'task': return <TaskIcon />;
-    case 'meeting': return <EventIcon />;
-    case 'success': return <CheckCircleIcon />;
-    case 'warning': return <WarningIcon />;
-    case 'info': return <InfoIcon />;
+    case 'task_assigned': return <TaskIcon />;
+    case 'task_completed': return <CheckCircleIcon />;
+    case 'project_update': return <EventIcon />;
+    case 'deadline_approaching': return <WarningIcon />;
+    case 'general': return <InfoIcon />;
     default: return <NotificationsIcon />;
   }
 };
 
 const getNotificationColor = (type) => {
   switch (type) {
-    case 'task': return '#2196f3';
-    case 'meeting': return '#ff9800';
-    case 'success': return '#4caf50';
-    case 'warning': return '#f44336';
-    case 'info': return '#2196f3';
+    case 'task_assigned': return '#2196f3';
+    case 'task_completed': return '#4caf50';
+    case 'project_update': return '#ff9800';
+    case 'deadline_approaching': return '#f44336';
+    case 'general': return '#2196f3';
     default: return GREEN;
   }
 };
 
 const getPriorityColor = (priority) => {
   switch (priority) {
+    case 'urgent': return '#d32f2f';
     case 'high': return '#f44336';
-    case 'medium': return '#ff9800';
+    case 'normal': return '#2196f3';
     case 'low': return '#4caf50';
     default: return '#999';
   }
@@ -139,9 +143,34 @@ const formatTimestamp = (timestamp) => {
   }
 };
 
-const NotificationsDialog = ({ open, onClose }) => {
-  const [notifications, setNotifications] = useState(sampleNotifications);
+const NotificationsDialog = ({ open, onClose, currentUser, onNotificationRead }) => {
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [notificationModalOpen, setNotificationModalOpen] = useState(false);
+
+  // Verificar si el usuario puede enviar notificaciones
+  const canSendNotifications = currentUser?.role === 'Administrador' || currentUser?.role === 'Coordinador';
+
+  // Cargar notificaciones del usuario actual
+  useEffect(() => {
+    if (open && currentUser) {
+      loadNotifications();
+    }
+  }, [open, currentUser]);
+
+  const loadNotifications = () => {
+    try {
+      const allNotifications = notificationService.getAll();
+      // Filtrar notificaciones del usuario actual
+      const userNotifications = allNotifications.filter(
+        notification => notification.user_id === currentUser.id
+      );
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('Error al cargar notificaciones:', error);
+      setNotifications([]);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -152,19 +181,41 @@ const NotificationsDialog = ({ open, onClose }) => {
   });
 
   const markAsRead = (id) => {
+    notificationService.markAsRead(id);
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
+    if (onNotificationRead) {
+      onNotificationRead();
+    }
   };
 
   const markAllAsRead = () => {
+    notifications.forEach(notification => {
+      if (!notification.read) {
+        notificationService.markAsRead(notification.id);
+      }
+    });
     setNotifications(prev => 
       prev.map(n => ({ ...n, read: true }))
     );
+    if (onNotificationRead) {
+      onNotificationRead();
+    }
   };
 
   const deleteNotification = (id) => {
+    notificationService.delete(id);
     setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleSendNotification = () => {
+    setNotificationModalOpen(true);
+  };
+
+  const handleNotificationSent = () => {
+    setNotificationModalOpen(false);
+    loadNotifications(); // Recargar notificaciones después de enviar
   };
 
   return (
@@ -195,12 +246,29 @@ const NotificationsDialog = ({ open, onClose }) => {
             Notificaciones
           </Typography>
         </Box>
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {canSendNotifications && (
+            <Button
+              size="small"
+              startIcon={<SendIcon />}
+              onClick={handleSendNotification}
+              sx={{ 
+                fontSize: '0.75rem',
+                fontFamily: 'Poppins, sans-serif',
+                bgcolor: GREEN,
+                color: 'white',
+                '&:hover': {
+                  bgcolor: '#1f9a1f'
+                }
+              }}
+            >
+              Enviar Notificación
+            </Button>
+          )}
           <Button
             size="small"
             onClick={markAllAsRead}
             sx={{ 
-              mr: 1, 
               fontSize: '0.75rem',
               fontFamily: 'Poppins, sans-serif'
             }}
@@ -279,8 +347,9 @@ const NotificationsDialog = ({ open, onClose }) => {
                           {notification.title}
                         </Typography>
                         <Chip
-                          label={notification.priority === 'high' ? 'Alta' : 
-                                 notification.priority === 'medium' ? 'Media' : 'Baja'}
+                          label={notification.priority === 'urgent' ? 'Urgente' :
+                                 notification.priority === 'high' ? 'Alta' : 
+                                 notification.priority === 'normal' ? 'Normal' : 'Baja'}
                           size="small"
                           sx={{
                             bgcolor: getPriorityColor(notification.priority),
@@ -323,9 +392,9 @@ const NotificationsDialog = ({ open, onClose }) => {
                               fontFamily: 'Poppins, sans-serif'
                             }}
                           >
-                            {formatTimestamp(notification.timestamp)}
+                            {formatTimestamp(notification.created_at)}
                           </Typography>
-                          {notification.user.name !== 'Sistema' && (
+                          {notification.sender_name && notification.sender_name !== 'Sistema' && (
                             <Typography
                               variant="caption"
                               sx={{
@@ -333,7 +402,7 @@ const NotificationsDialog = ({ open, onClose }) => {
                                 fontFamily: 'Poppins, sans-serif'
                               }}
                             >
-                              • Por {notification.user.name}
+                              • Por {notification.sender_name}
                             </Typography>
                           )}
                         </Box>
@@ -372,6 +441,16 @@ const NotificationsDialog = ({ open, onClose }) => {
           Cerrar
         </Button>
       </DialogActions>
+
+      {/* Modal para enviar notificaciones */}
+      {canSendNotifications && (
+        <NotificationModal
+          open={notificationModalOpen}
+          onClose={() => setNotificationModalOpen(false)}
+          currentUser={currentUser}
+          onNotificationSent={handleNotificationSent}
+        />
+      )}
     </Dialog>
   );
 };
