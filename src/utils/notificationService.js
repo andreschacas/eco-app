@@ -198,11 +198,23 @@ class NotificationService {
 
     const sampleNotifications = [
       {
+        type: 'project_assigned',
+        title: 'Nuevo proyecto asignado',
+        message: 'Has sido agregado al proyecto "Sistema de Monitoreo Ambiental" por Ana García',
+        project_id: 2,
+        project_name: 'Sistema de Monitoreo Ambiental',
+        user_id: 3,
+        priority: 'normal',
+        sender_name: 'Ana García'
+      },
+      {
         type: 'task_assigned',
         title: 'Nueva tarea asignada',
-        message: 'Se te ha asignado la tarea "Finalizar presupuesto del evento"',
+        message: 'Se te ha asignado la tarea "Finalizar presupuesto del evento" en el proyecto "Evento de Sostenibilidad" por Ana García',
         project_id: 1,
         project_name: 'Evento de Sostenibilidad',
+        task_id: 1,
+        task_title: 'Finalizar presupuesto del evento',
         user_id: 3,
         priority: 'high',
         sender_name: 'Ana García'

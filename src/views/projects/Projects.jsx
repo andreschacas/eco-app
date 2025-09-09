@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -54,106 +54,14 @@ import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import dataService from '../../utils/dataService';
 
 const GREEN = '#2AAC26';
 
-// Los 3 proyectos del dashboard de inicio
-const projectsData = [
-  {
-    id: 1,
-    name: 'Tesis Huella de carbono',
-    description: 'Investigación y análisis de la huella de carbono en procesos industriales para implementar estrategias de reducción sostenible.',
-    status: 'En progreso',
-    priority: 'Alta',
-    progress: 55,
-    startDate: new Date('2024-01-15'),
-    endDate: new Date('2024-12-25'),
-    budget: 25000,
-    actualCost: 13750,
-    manager: 'Dr. Elena Rodríguez',
-    members: [
-      { id: 1, name: 'Dr. Elena Rodríguez', role: 'Investigador Principal', avatar: 'https://i.pravatar.cc/150?img=1', email: 'elena.rodriguez@eco.com' },
-      { id: 2, name: 'Carlos Mendoza', role: 'Analista Ambiental', avatar: 'https://i.pravatar.cc/150?img=2', email: 'carlos.mendoza@eco.com' },
-      { id: 3, name: 'Ana Martínez', role: 'Especialista en Datos', avatar: 'https://i.pravatar.cc/150?img=3', email: 'ana.martinez@eco.com' }
-    ],
-    tags: ['Investigación', 'Carbono', 'Sostenibilidad'],
-    color: '#2196f3',
-    bgColor: '#e3f2fd',
-    isStarred: true,
-    tasks: [
-      { id: 1, title: 'Recolección de datos industriales', completed: true, assignedTo: 'Carlos Mendoza', dueDate: '2024-01-30' },
-      { id: 2, title: 'Análisis de emisiones por sector', completed: true, assignedTo: 'Ana Martínez', dueDate: '2024-02-15' },
-      { id: 3, title: 'Modelado de reducción de carbono', completed: false, assignedTo: 'Dr. Elena Rodríguez', dueDate: '2024-03-01' },
-      { id: 4, title: 'Redacción de conclusiones', completed: false, assignedTo: 'Dr. Elena Rodríguez', dueDate: '2024-03-15' }
-    ],
-    attachments: 12,
-    comments: 45,
-    lastActivity: '2 horas ago'
-  },
-  {
-    id: 2,
-    name: 'Pared verde sustentable',
-    description: 'Desarrollo e implementación de sistemas de paredes verdes para mejorar la calidad del aire en espacios urbanos.',
-    status: 'En progreso',
-    priority: 'Media',
-    progress: 78,
-    startDate: new Date('2023-11-01'),
-    endDate: new Date('2024-12-28'),
-    budget: 35000,
-    actualCost: 27300,
-    manager: 'Arq. Patricia Silva',
-    members: [
-      { id: 4, name: 'Arq. Patricia Silva', role: 'Arquitecta Paisajista', avatar: 'https://i.pravatar.cc/150?img=4', email: 'patricia.silva@eco.com' },
-      { id: 5, name: 'Miguel Torres', role: 'Ingeniero Ambiental', avatar: 'https://i.pravatar.cc/150?img=5', email: 'miguel.torres@eco.com' }
-    ],
-    tags: ['Arquitectura Verde', 'Calidad del Aire', 'Urbano'],
-    color: '#9c27b0',
-    bgColor: '#f3e5f5',
-    isStarred: false,
-    tasks: [
-      { id: 1, title: 'Diseño de sistema de riego', completed: true, assignedTo: 'Arq. Patricia Silva', dueDate: '2024-01-15' },
-      { id: 2, title: 'Selección de plantas nativas', completed: true, assignedTo: 'Miguel Torres', dueDate: '2024-01-20' },
-      { id: 3, title: 'Instalación del prototipo', completed: true, assignedTo: 'Miguel Torres', dueDate: '2024-02-10' },
-      { id: 4, title: 'Monitoreo de calidad del aire', completed: false, assignedTo: 'Miguel Torres', dueDate: '2024-03-01' }
-    ],
-    attachments: 8,
-    comments: 23,
-    lastActivity: '1 día ago'
-  },
-  {
-    id: 3,
-    name: 'Tesis Huella hídrica',
-    description: 'Estudio del consumo de agua en procesos agrícolas y propuesta de técnicas de conservación hídrica.',
-    status: 'Planificación',
-    priority: 'Alta',
-    progress: 32,
-    startDate: new Date('2024-02-01'),
-    endDate: new Date('2025-01-15'),
-    budget: 20000,
-    actualCost: 6400,
-    manager: 'Ing. Roberto Vargas',
-    members: [
-      { id: 6, name: 'Ing. Roberto Vargas', role: 'Ingeniero Hidráulico', avatar: 'https://i.pravatar.cc/150?img=6', email: 'roberto.vargas@eco.com' },
-      { id: 7, name: 'Laura González', role: 'Bióloga Marina', avatar: 'https://i.pravatar.cc/150?img=7', email: 'laura.gonzalez@eco.com' },
-      { id: 8, name: 'Pedro Ramírez', role: 'Técnico en Aguas', avatar: 'https://i.pravatar.cc/150?img=8', email: 'pedro.ramirez@eco.com' }
-    ],
-    tags: ['Hidrología', 'Agricultura', 'Conservación'],
-    color: '#ff5722',
-    bgColor: '#fbe9e7',
-    isStarred: true,
-    tasks: [
-      { id: 1, title: 'Revisión bibliográfica', completed: true, assignedTo: 'Laura González', dueDate: '2024-02-15' },
-      { id: 2, title: 'Identificación de áreas de estudio', completed: false, assignedTo: 'Ing. Roberto Vargas', dueDate: '2024-03-01' },
-      { id: 3, title: 'Instalación de medidores', completed: false, assignedTo: 'Pedro Ramírez', dueDate: '2024-03-15' }
-    ],
-    attachments: 5,
-    comments: 12,
-    lastActivity: '3 días ago'
-  }
-];
+// Los datos de proyectos ahora se cargan dinámicamente desde dataService
 
 const ProjectsView = () => {
-  const [projects, setProjects] = useState(projectsData);
+  const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedProject, setSelectedProject] = useState(null);
@@ -164,6 +72,75 @@ const ProjectsView = () => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [selectedMemberForTask, setSelectedMemberForTask] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Cargar datos del dataService
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = () => {
+    try {
+      setLoading(true);
+      const projectsData = dataService.getAll('projects');
+      
+      // Transformar los datos para que coincidan con el formato esperado
+      const transformedProjects = projectsData.map(project => ({
+        ...project,
+        startDate: new Date(project.start_date),
+        endDate: new Date(project.end_date),
+        progress: getProjectProgress(project.id),
+        priority: 'Alta', // Valor por defecto
+        budget: 25000, // Valor por defecto
+        actualCost: 13750, // Valor por defecto
+        manager: 'Dr. Elena Rodríguez', // Valor por defecto
+        members: getProjectMembers(project.id),
+        tags: ['Investigación', 'Sostenibilidad'],
+        color: '#2196f3',
+        bgColor: '#e3f2fd',
+        isStarred: false,
+        tasks: getProjectTasks(project.id),
+        attachments: 12,
+        comments: 45,
+        lastActivity: '2 horas ago'
+      }));
+      
+      setProjects(transformedProjects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getProjectProgress = (projectId) => {
+    const tasks = dataService.getTasksByProject(projectId);
+    if (tasks.length === 0) return 0;
+    const completedTasks = tasks.filter(t => t.status === 'Completada').length;
+    return Math.round((completedTasks / tasks.length) * 100);
+  };
+
+  const getProjectMembers = (projectId) => {
+    const participants = dataService.getProjectParticipants(projectId);
+    return participants.map(p => ({
+      id: p.id,
+      name: p.name,
+      role: 'Participante',
+      avatar: p.avatar || 'https://i.pravatar.cc/150?img=' + p.id,
+      email: p.email
+    }));
+  };
+
+  const getProjectTasks = (projectId) => {
+    const tasks = dataService.getTasksByProject(projectId);
+    return tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      completed: task.status === 'Completada',
+      assignedTo: 'Usuario Asignado',
+      dueDate: task.due_date
+    }));
+  };
 
   // Filtros y búsqueda
   const filteredProjects = projects.filter(project => {
@@ -428,6 +405,14 @@ const ProjectsView = () => {
       </CardContent>
     </Card>
   );
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography>Cargando proyectos...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3, fontFamily: 'Poppins, sans-serif' }}>

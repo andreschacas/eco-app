@@ -208,7 +208,7 @@ const Sidebar = ({ onNavigate, current, user: userProp, onCalendarNavigation, on
                   transition: 'background 0.2s',
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 36, color: current === item.key ? '#ffffff' : '#8B8B8B', opacity: current === item.key ? 0.95 : 1 }}>
+                <ListItemIcon sx={{ minWidth: 36, color: current === item.key ? GREEN : '#8B8B8B', opacity: current === item.key ? 0.95 : 1 }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText 

@@ -156,7 +156,7 @@ const CoordinatorParticipants = ({ onNavigate }) => {
       selectedUsers.forEach(user => {
         const existing = participants.find(p => p.id === user.id);
         if (!existing) {
-          dataService.addUserToProject(selectedProject, user.id);
+          dataService.addUserToProject(selectedProject, user.id, user?.id);
           addedCount++;
         }
       });

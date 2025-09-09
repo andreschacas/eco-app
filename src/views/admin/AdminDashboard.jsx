@@ -22,6 +22,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import dataService from '../../utils/dataService';
+import activityService from '../../utils/activityService';
 import DashboardWidgets from '../../components/dashboard/DashboardWidgets';
 
 const GREEN = '#2AAC26';
@@ -30,10 +31,59 @@ const AdminDashboard = ({ onNavigate }) => {
   const [stats, setStats] = useState({});
   const [recentProjects, setRecentProjects] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadDashboardData();
+  }, []);
+
+  // Escuchar cambios en las actividades
+  useEffect(() => {
+    const handleStorageChange = () => {
+      // Recargar actividades cuando cambie el localStorage
+      const activities = activityService.getRecentActivities(10);
+      setRecentActivities(activities);
+    };
+
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También escuchar eventos personalizados de actividad
+    const handleActivityAdded = () => {
+      console.log('AdminDashboard - Nueva actividad detectada, recargando...');
+      const allActivities = activityService.getAllActivities();
+      const sortedActivities = allActivities
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 50);
+      setRecentActivities(sortedActivities);
+    };
+
+    // Agregar listener para eventos de actividad
+    window.addEventListener('activityAdded', handleActivityAdded);
+
+    // Intervalo de actualización como respaldo (cada 5 segundos)
+    const updateInterval = setInterval(() => {
+      const allActivities = activityService.getAllActivities();
+      const sortedActivities = allActivities
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 50);
+      
+      setRecentActivities(prevActivities => {
+        // Solo actualizar si hay cambios
+        if (JSON.stringify(sortedActivities) !== JSON.stringify(prevActivities)) {
+          console.log('AdminDashboard - Actualización por intervalo detectada');
+          return sortedActivities;
+        }
+        return prevActivities;
+      });
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('activityAdded', handleActivityAdded);
+      clearInterval(updateInterval);
+    };
   }, []);
 
   const loadDashboardData = () => {
@@ -54,10 +104,31 @@ const AdminDashboard = ({ onNavigate }) => {
         .slice(0, 5);
       setRecentUsers(users);
 
+      // Cargar actividades recientes
+      loadRecentActivities(users);
+
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecentActivities = (users) => {
+    try {
+      // Obtener todas las actividades del localStorage (persistencia completa)
+      const allActivities = activityService.getAllActivities();
+      console.log('AdminDashboard - Cargando actividades del localStorage:', allActivities.length);
+      
+      // Ordenar por timestamp (más recientes primero) y limitar a 50 para rendimiento
+      const sortedActivities = allActivities
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 50);
+      
+      setRecentActivities(sortedActivities);
+    } catch (error) {
+      console.error('Error loading activities:', error);
+      setRecentActivities([]);
     }
   };
 
@@ -97,6 +168,41 @@ const AdminDashboard = ({ onNavigate }) => {
   const getProjectParticipants = (projectId) => {
     const participants = dataService.getProjectParticipants(projectId);
     return participants.slice(0, 3);
+  };
+
+  // Obtener información del usuario para una actividad
+  const getUserForActivity = (userId) => {
+    return recentUsers.find(user => user.id === userId) || 
+           dataService.getAll('users').find(user => user.id === userId);
+  };
+
+  // Obtener actividades agrupadas por usuario con historial completo
+  const getActivitiesByUser = () => {
+    const activitiesByUser = {};
+    
+    recentActivities.forEach(activity => {
+      const user = getUserForActivity(activity.userId);
+      if (user) {
+        if (!activitiesByUser[user.id]) {
+          activitiesByUser[user.id] = {
+            user,
+            activities: []
+          };
+        }
+        activitiesByUser[user.id].activities.push(activity);
+      }
+    });
+
+    // Convertir a array y ordenar por la actividad más reciente
+    return Object.values(activitiesByUser)
+      .map(userData => ({
+        ...userData,
+        // Ordenar actividades del usuario por timestamp (más reciente primero)
+        activities: userData.activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+        lastActivity: userData.activities[0] // La más reciente
+      }))
+      .sort((a, b) => new Date(b.lastActivity.timestamp) - new Date(a.lastActivity.timestamp))
+      .slice(0, 5); // Mostrar solo 5 usuarios
   };
 
   const getDaysRemaining = (endDate) => {
@@ -230,29 +336,6 @@ const AdminDashboard = ({ onNavigate }) => {
             Proyectos del Sistema
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => onNavigate('admin-projects')}
-                    sx={{
-                      background: 'linear-gradient(135deg, #2AAC26 0%, #1f9a1f 100%)',
-                      textTransform: 'none',
-                      fontFamily: 'Poppins, sans-serif',
-                      fontWeight: 600,
-                      borderRadius: 2,
-                      px: 3,
-                      py: 1.5,
-                      boxShadow: '0 4px 12px rgba(42, 172, 38, 0.3)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #1f9a1f 0%, #1a8a1a 100%)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(42, 172, 38, 0.4)'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    Nuevo Proyecto
-                  </Button>
                   <Button
                     variant="outlined"
                     onClick={() => onNavigate('admin-projects')}
@@ -434,12 +517,34 @@ const AdminDashboard = ({ onNavigate }) => {
         )}
       </Box>
 
-      {/* Usuarios Recientes - Horizontal */}
+      {/* Actividad Reciente - Horizontal */}
       <Box sx={{ mb: 4 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                  Usuarios Recientes
+            Actividad Reciente
                 </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  activityService.clearAllActivities();
+                  setRecentActivities([]);
+                  console.log('Actividades limpiadas manualmente');
+                }}
+                sx={{
+                  borderColor: '#f44336',
+                  color: '#f44336',
+                  textTransform: 'none',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '0.75rem',
+                  '&:hover': { borderColor: '#d32f2f', bgcolor: '#ffebee' }
+                }}
+              >
+                🗑️ Limpiar
+              </Button>
+            )}
                 <Button
                   variant="outlined"
                   onClick={() => onNavigate('admin-users')}
@@ -454,74 +559,188 @@ const AdminDashboard = ({ onNavigate }) => {
                   Ver Todos
                 </Button>
               </Box>
+        </Box>
 
         <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
-              {recentUsers.map((user) => (
-            <Card
+          {getActivitiesByUser().length > 0 ? (
+            getActivitiesByUser().map((userData) => {
+              const { user, activities } = userData;
+              const lastActivity = activities[0]; // La más reciente
+              const activityDescription = activityService.getActivityDescription(lastActivity);
+              const activityIcon = activityService.getActivityIcon(lastActivity.activityType);
+              const relativeTime = activityService.getRelativeTime(lastActivity.timestamp);
+              
+              return (
+                <Card
                   key={user.id}
                   sx={{
-                minWidth: 280,
-                borderRadius: 3,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
-                },
+                    minWidth: 350,
+                    borderRadius: 3,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
+                    },
                     cursor: 'pointer'
                   }}
                   onClick={() => onNavigate('admin-users')}
                 >
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Avatar 
-                    src={user.avatar} 
-                    alt={user.name} 
-                    sx={{ 
-                      width: 48, 
-                      height: 48,
-                      border: '3px solid white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }} 
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif', mb: 0.5 }}>
-                      {user.name}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 1 }}>
-                      {user.email}
-                    </Typography>
-                      <Chip
-                        label={getRoleName(user.role_id)}
-                        size="small"
-                        sx={{
-                          bgcolor: `${getRoleColor(user.role_id)}20`,
-                          color: getRoleColor(user.role_id),
-                          fontFamily: 'Poppins, sans-serif',
-                        fontWeight: 500
-                        }}
+                  <CardContent sx={{ p: 3 }}>
+                    {/* Header con usuario */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Avatar 
+                        src={user.avatar} 
+                        alt={user.name} 
+                        sx={{ 
+                          width: 48, 
+                          height: 48,
+                          border: '3px solid white',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }} 
                       />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif', mb: 0.5 }}>
+                          {user.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 1 }}>
+                          {user.email}
+                        </Typography>
+                        <Chip
+                          label={getRoleName(user.role_id)}
+                          size="small"
+                          sx={{
+                            bgcolor: `${getRoleColor(user.role_id)}20`,
+                            color: getRoleColor(user.role_id),
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 500
+                          }}
+                        />
+                      </Box>
                     </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      bgcolor: user.active ? '#4caf50' : '#f44336'
-                    }} />
-                    <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                      {user.active ? 'Activo' : 'Inactivo'}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
-                    Última actividad: Hoy
-                  </Typography>
-                </Box>
+
+                    {/* Historial de actividades */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" sx={{ 
+                        fontWeight: 600, 
+                        fontFamily: 'Poppins, sans-serif',
+                        color: '#333',
+                        mb: 1.5
+                      }}>
+                        Actividades Recientes ({activities.length})
+                      </Typography>
+                      
+                      <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+                        {activities.slice(0, 5).map((activity, index) => {
+                          const desc = activityService.getActivityDescription(activity);
+                          const icon = activityService.getActivityIcon(activity.activityType);
+                          const time = activityService.getRelativeTime(activity.timestamp);
+                          
+                          return (
+                            <Box 
+                              key={activity.id}
+                              sx={{ 
+                                display: 'flex', 
+                                alignItems: 'flex-start', 
+                                gap: 1.5, 
+                                mb: 1.5,
+                                p: 1.5,
+                                bgcolor: index === 0 ? '#f8f9fa' : 'transparent',
+                                borderRadius: 1.5,
+                                border: index === 0 ? '1px solid #e9ecef' : 'none',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  bgcolor: '#f5f5f5',
+                                  borderRadius: 2
+                                }
+                              }}
+                            >
+                              <Typography sx={{ fontSize: '1rem', lineHeight: 1, mt: 0.2 }}>
+                                {icon}
+                              </Typography>
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ 
+                                  color: '#333', 
+                                  fontFamily: 'Poppins, sans-serif',
+                                  fontWeight: index === 0 ? 500 : 400,
+                                  lineHeight: 1.4,
+                                  fontSize: index === 0 ? '0.875rem' : '0.8rem'
+                                }}>
+                                  {desc}
+                                </Typography>
+                                <Typography variant="caption" sx={{ 
+                                  color: '#999', 
+                                  fontFamily: 'Poppins, sans-serif',
+                                  fontSize: '0.75rem'
+                                }}>
+                                  {time}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    </Box>
+
+                    {/* Footer con estado y tiempo */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: user.active ? '#4caf50' : '#f44336'
+                        }} />
+                        <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                          {user.active ? 'Activo' : 'Inactivo'}
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
+                        {relativeTime}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })
+          ) : (
+            <Card sx={{ 
+              minWidth: 320, 
+              borderRadius: 3, 
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              border: '2px dashed #e0e0e0'
+            }}>
+              <CardContent sx={{ 
+                p: 4, 
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 200
+              }}>
+                <Typography sx={{ fontSize: '3rem', mb: 2, opacity: 0.5 }}>
+                  🔔
+                </Typography>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  fontFamily: 'Poppins, sans-serif',
+                  color: '#666',
+                  mb: 1
+                }}>
+                  Sin Actividad Reciente
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  color: '#999', 
+                  fontFamily: 'Poppins, sans-serif',
+                  textAlign: 'center',
+                  maxWidth: 250
+                }}>
+                  Las actividades de los usuarios aparecerán aquí cuando realicen acciones en el sistema
+                </Typography>
               </CardContent>
             </Card>
-          ))}
+          )}
         </Box>
       </Box>
 

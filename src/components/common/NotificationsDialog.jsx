@@ -22,6 +22,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendIcon from '@mui/icons-material/Send';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import notificationService from '../../utils/notificationService';
 import NotificationModal from '../notifications/NotificationModal';
 
@@ -98,6 +99,7 @@ const sampleNotifications = [
 
 const getNotificationIcon = (type) => {
   switch (type) {
+    case 'project_assigned': return <AssignmentIcon />;
     case 'task_assigned': return <TaskIcon />;
     case 'task_completed': return <CheckCircleIcon />;
     case 'project_update': return <EventIcon />;
@@ -109,6 +111,7 @@ const getNotificationIcon = (type) => {
 
 const getNotificationColor = (type) => {
   switch (type) {
+    case 'project_assigned': return '#9c27b0';
     case 'task_assigned': return '#2196f3';
     case 'task_completed': return '#4caf50';
     case 'project_update': return '#ff9800';

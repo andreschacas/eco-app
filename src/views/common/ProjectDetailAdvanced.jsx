@@ -247,11 +247,11 @@ const ProjectDetailAdvanced = ({ project, onBack, onNavigate }) => {
         dataService.update('tasks', editingTask.id, taskData);
         showSnackbar('Tarea actualizada exitosamente', 'success');
       } else {
-        const newTask = dataService.create('tasks', taskData);
-        // Asignar usuarios a la tarea
+        const newTask = dataService.createTask(taskData, user?.id);
+        // Asignar usuarios a la tarea (las notificaciones se generan automáticamente)
         if (taskForm.assigned_users.length > 0) {
           taskForm.assigned_users.forEach(userId => {
-            dataService.assignTaskToUser(newTask.id, userId);
+            dataService.assignTaskToUser(newTask.id, userId, user?.id);
           });
         }
         showSnackbar('Tarea creada exitosamente', 'success');

@@ -46,6 +46,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import dataService from '../../utils/dataService';
+import activityService from '../../utils/activityService';
 import { useAuth } from '../../context/auth/AuthContext';
 import eventBus from '../../utils/eventBus';
 
@@ -486,6 +487,21 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
         // Actualizar en el dataService
         dataService.update('tasks', activeTask.id, { status: newStatus });
         
+        // Registrar actividad de movimiento de tarea
+        if (user?.id) {
+          activityService.addActivity(
+            user.id,
+            activityService.ACTIVITY_TYPES.TASK_MOVED,
+            {
+              taskTitle: activeTask.title,
+              taskId: activeTask.id,
+              newStatus: newStatus,
+              oldStatus: activeTask.status,
+              projectId: activeTask.project_id
+            }
+          );
+        }
+        
         // Actualizar el estado local inmediatamente sin recargar
         setTasks(prevTasks => 
           prevTasks.map(task => 
@@ -494,6 +510,19 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
               : task
           )
         );
+        
+        // Emitir evento de actualización
+        console.log('Kanban - Emitiendo evento taskUpdated por drag:', { 
+          taskId: activeTask.id, 
+          newStatus, 
+          oldStatus: activeTask.status, 
+          projectId: activeTask.project_id 
+        });
+        eventBus.emit('taskUpdated', { 
+          taskId: activeTask.id, 
+          taskData: { ...activeTask, status: newStatus }, 
+          projectId: activeTask.project_id 
+        });
         
         showSnackbar(`Tarea movida a "${newStatus}"`, 'success');
       } catch (error) {
@@ -545,19 +574,46 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
 
       if (editingTask) {
         dataService.update('tasks', editingTask.id, taskData);
+        
+        // Registrar actividad de actualización de tarea
+        if (user?.id) {
+          activityService.addActivity(
+            user.id,
+            activityService.ACTIVITY_TYPES.TASK_UPDATED,
+            {
+              taskTitle: taskData.title,
+              taskId: editingTask.id,
+              projectId: taskData.project_id
+            }
+          );
+        }
+        
         showSnackbar('Tarea actualizada exitosamente', 'success');
         
         // Emitir evento de actualización
         console.log('Kanban - Emitiendo evento taskUpdated:', { taskId: editingTask.id, taskData, projectId });
         eventBus.emit('taskUpdated', { taskId: editingTask.id, taskData, projectId });
       } else {
-        const newTask = dataService.create('tasks', taskData);
+        const newTask = dataService.createTask(taskData, user?.id);
         
-        // Asignar usuarios a la tarea
+        // Asignar usuarios a la tarea (las notificaciones se generan automáticamente)
         if (taskForm.assigned_users.length > 0) {
           taskForm.assigned_users.forEach(userId => {
-            dataService.assignTaskToUser(newTask.id, userId);
+            dataService.assignTaskToUser(newTask.id, userId, user?.id);
           });
+        }
+        
+        // Registrar actividad de creación de tarea
+        if (user?.id) {
+          activityService.addActivity(
+            user.id,
+            activityService.ACTIVITY_TYPES.TASK_CREATED,
+            {
+              taskTitle: newTask.title,
+              taskId: newTask.id,
+              projectId: newTask.project_id
+            }
+          );
         }
         
         showSnackbar('Tarea creada exitosamente', 'success');
@@ -576,7 +632,24 @@ const KanbanBoardNew = ({ filterByRole = true, projectId = null, userId = null }
 
   const handleTaskDelete = (taskId) => {
     try {
+      // Obtener información de la tarea antes de eliminarla
+      const taskToDelete = tasks.find(task => task.id === taskId);
+      
       dataService.delete('tasks', taskId);
+      
+      // Registrar actividad de eliminación de tarea
+      if (user?.id && taskToDelete) {
+        activityService.addActivity(
+          user.id,
+          activityService.ACTIVITY_TYPES.TASK_DELETED,
+          {
+            taskTitle: taskToDelete.title,
+            taskId: taskId,
+            projectId: taskToDelete.project_id
+          }
+        );
+      }
+      
       showSnackbar('Tarea eliminada exitosamente', 'success');
       
       // Emitir evento de eliminación

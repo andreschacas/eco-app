@@ -71,7 +71,7 @@ const Navbar = ({ user: userProp, ...props }) => {
       <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: '1px solid #f0f0f0', background: '#fff', color: '#222', fontFamily: 'Poppins, sans-serif' }}>
         <Toolbar sx={{ minHeight: 64, px: 3 }}>
           
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', px: 4 }}>
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', px: 2 }}>
             <InputBase
               placeholder="Buscar..."
               sx={{
@@ -85,7 +85,7 @@ const Navbar = ({ user: userProp, ...props }) => {
                 boxShadow: 'none',
                 border: '1px solid #e0e0e0',
                 fontFamily: 'Poppins, sans-serif',
-                maxWidth: '100%',
+                maxWidth: '600px',
                 '&:hover': {
                   borderColor: GREEN,
                 },

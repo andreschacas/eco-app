@@ -245,19 +245,50 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
       return;
     }
 
-    const dates = tasksData
-      .filter(task => task.due_date)
-      .map(task => new Date(task.due_date));
+    // Recopilar todas las fechas relevantes (inicio y fin de tareas)
+    const allDates = [];
     
-    if (dates.length > 0) {
-      const minDate = new Date(Math.min(...dates));
-      const maxDate = new Date(Math.max(...dates));
+    tasksData.forEach(task => {
+      // Agregar fecha de inicio si existe
+      if (task.start_date) {
+        allDates.push(new Date(task.start_date));
+      } else if (task.created_at) {
+        // Usar fecha de creación como inicio si no hay start_date
+        allDates.push(new Date(task.created_at));
+      }
       
-      const startOfMonth = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-      const endOfMonth = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+      // Agregar fecha de vencimiento si existe
+      if (task.due_date) {
+        allDates.push(new Date(task.due_date));
+      }
+    });
+    
+    if (allDates.length > 0) {
+      const minDate = new Date(Math.min(...allDates));
+      const maxDate = new Date(Math.max(...allDates));
       
-      setViewStartDate(startOfMonth);
-      setViewEndDate(endOfMonth);
+      // Agregar un margen de una semana antes y después
+      const marginDays = 7;
+      const startDate = new Date(minDate);
+      startDate.setDate(startDate.getDate() - marginDays);
+      
+      const endDate = new Date(maxDate);
+      endDate.setDate(endDate.getDate() + marginDays);
+      
+      // Ajustar al inicio de la semana para la fecha de inicio
+      const startOfWeek = new Date(startDate);
+      const dayOfWeek = startOfWeek.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(startOfWeek.getDate() - daysToMonday);
+      
+      // Ajustar al final de la semana para la fecha de fin
+      const endOfWeek = new Date(endDate);
+      const endDayOfWeek = endOfWeek.getDay();
+      const daysToSunday = endDayOfWeek === 0 ? 0 : 7 - endDayOfWeek;
+      endOfWeek.setDate(endOfWeek.getDate() + daysToSunday);
+      
+      setViewStartDate(startOfWeek);
+      setViewEndDate(endOfWeek);
     }
   };
 
@@ -325,6 +356,11 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
     return <Assignment />;
   };
 
+  const isCurrentWeek = (start, end) => {
+    const now = new Date();
+    return now >= start && now <= end;
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Completada': return '#4CAF50';
@@ -332,6 +368,26 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
       case 'Pendiente': return '#FF9800';
       case 'Bloqueada': return '#F44336';
       default: return '#9E9E9E';
+    }
+  };
+
+  const getTaskGradient = (status, priority) => {
+    if (status === 'Completada') {
+      return 'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)';
+    } else if (status === 'En Progreso') {
+      if (priority === 'Urgente' || priority === 'Crítica') {
+        return 'linear-gradient(135deg, #F44336 0%, #D32F2F 100%)';
+      } else if (priority === 'Alta') {
+        return 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)';
+      } else {
+        return 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)';
+      }
+    } else if (status === 'Pendiente') {
+      return 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)';
+    } else if (status === 'Bloqueada') {
+      return 'linear-gradient(135deg, #F44336 0%, #D32F2F 100%)';
+    } else {
+      return 'linear-gradient(135deg, #9E9E9E 0%, #757575 100%)';
     }
   };
 
@@ -411,36 +467,118 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
         position: 'sticky', 
         top: 0, 
         zIndex: 10, 
-        bgcolor: 'white',
-        borderBottom: '2px solid #e0e0e0'
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        borderBottom: '2px solid #e0e0e0',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <Grid container spacing={0}>
           <Grid item xs={3}>
-            <Box sx={{ p: 2, borderRight: '1px solid #e0e0e0' }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#333' }}>
-                Nombre del Proyecto
-              </Typography>
+            <Box sx={{ 
+              p: 2, 
+              borderRight: '2px solid #e0e0e0',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              position: 'relative',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                right: '-1px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '2px',
+                height: '30px',
+                background: 'linear-gradient(180deg, #3498db 0%, #2980b9 100%)',
+                borderRadius: '1px'
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)'
+                }} />
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 700, 
+                  color: '#2c3e50',
+                  fontSize: '16px'
+                }}>
+                  Proyectos
+                </Typography>
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={9}>
-            <Box sx={{ display: 'flex' }}>
-              {weeks.map((week, index) => (
-                <Box key={index} sx={{ 
-                  flex: 1, 
-                  p: 1.5, 
-                  textAlign: 'center',
-                  borderRight: '1px solid #e0e0e0',
-                  bgcolor: index % 2 === 0 ? '#f8f9fa' : 'white'
-                }}>
-                  <Typography variant="body2" sx={{ 
-                    fontWeight: 500, 
-                    color: '#333',
-                    fontSize: '0.875rem'
+            <Box sx={{ 
+              display: 'flex',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
+              {weeks.map((week, index) => {
+                const isCurrentWeekFlag = isCurrentWeek(week.start, week.end);
+                
+                return (
+                  <Box key={index} sx={{ 
+                    flex: 1, 
+                    p: 1.5, 
+                    textAlign: 'center',
+                    borderRight: '1px solid #e0e0e0',
+                    position: 'relative',
+                    background: isCurrentWeekFlag 
+                      ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                      : 'transparent',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: isCurrentWeekFlag 
+                        ? 'linear-gradient(135deg, #bbdefb 0%, #90caf9 100%)'
+                        : 'linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%)'
+                    }
                   }}>
-                    {week.label}
-                  </Typography>
-                </Box>
-              ))}
+                    {/* Indicador de semana actual */}
+                    {isCurrentWeekFlag && (
+                      <Box sx={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '8px',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                        animation: 'pulse 2s infinite'
+                      }} />
+                    )}
+                    
+                    <Typography variant="body2" sx={{ 
+                      fontWeight: 700, 
+                      color: isCurrentWeekFlag ? '#1976d2' : '#666',
+                      fontSize: '13px',
+                      mb: 0.5
+                    }}>
+                      {week.label}
+                    </Typography>
+                    
+                    <Typography variant="caption" sx={{ 
+                      color: isCurrentWeekFlag ? '#1976d2' : '#888',
+                      fontSize: '10px',
+                      fontWeight: 500
+                    }}>
+                      {week.start.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })} - 
+                      {week.end.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}
+                    </Typography>
+                    
+                    {/* Indicador de progreso de la semana */}
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: '0',
+                      left: '0',
+                      right: '0',
+                      height: '3px',
+                      background: isCurrentWeekFlag 
+                        ? 'linear-gradient(90deg, #4caf50 0%, #8bc34a 100%)'
+                        : 'linear-gradient(90deg, #e0e0e0 0%, #f5f5f5 100%)',
+                      borderRadius: '0 0 4px 4px'
+                    }} />
+                  </Box>
+                );
+              })}
             </Box>
           </Grid>
         </Grid>
@@ -449,8 +587,16 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
   };
 
   const renderTaskRow = (task) => {
-    const startDate = new Date(task.start_date || task.created_at);
-    const endDate = new Date(task.due_date);
+    // Validar fechas de manera más robusta
+    const startDate = task.start_date ? new Date(task.start_date) : new Date(task.created_at);
+    const endDate = task.due_date ? new Date(task.due_date) : new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    // Asegurar que las fechas sean válidas
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.warn('Fechas inválidas para tarea:', task.title);
+      return null;
+    }
+
     const today = new Date();
     
     const getTaskPosition = () => {
@@ -458,8 +604,9 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
       const taskStartDays = Math.ceil((startDate - viewStartDate) / (1000 * 60 * 60 * 24));
       const taskDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
       
-      const leftPercent = Math.max(0, (taskStartDays / totalDays) * 100);
-      const widthPercent = Math.min(100, (taskDurationDays / totalDays) * 100);
+      // Asegurar valores válidos
+      const leftPercent = Math.max(0, Math.min(100, (taskStartDays / totalDays) * 100));
+      const widthPercent = Math.max(5, Math.min(100, (taskDurationDays / totalDays) * 100));
       
       return { left: leftPercent, width: widthPercent };
     };
@@ -471,9 +618,15 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
     return (
       <Box key={task.id} sx={{ 
         position: 'relative', 
-        height: 50, 
-        borderBottom: '1px solid #f0f0f0',
-        '&:hover': { bgcolor: '#f8f9fa' }
+        height: 60, 
+        borderBottom: '1px solid #e8e9ea',
+        background: 'linear-gradient(135deg, #ffffff 0%, #fafbfc 100%)',
+        transition: 'all 0.2s ease',
+        '&:hover': { 
+          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+        }
       }}>
         <Grid container spacing={0}>
           <Grid item xs={3}>
@@ -482,29 +635,79 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
               display: 'flex', 
               alignItems: 'center', 
               gap: 2,
-              borderRight: '1px solid #e0e0e0'
+              borderRight: '2px solid #e8e9ea',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+              position: 'relative',
+              height: '100%'
             }}>
-              {/* Indicador de estado minimalista */}
+              {/* Indicador de color del estado */}
               <Box sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: getStatusColor(task.status),
-                flexShrink: 0
+                position: 'absolute',
+                left: '0',
+                top: '0',
+                bottom: '0',
+                width: '4px',
+                background: `linear-gradient(180deg, ${getStatusColor(task.status)} 0%, ${getStatusColor(task.status)}80 100%)`
               }} />
+              
+              {/* Indicador de estado mejorado */}
+              <Box sx={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${getStatusColor(task.status)} 0%, ${getStatusColor(task.status)}CC 100%)`,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                <Box sx={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: 'white'
+                }} />
+              </Box>
+              
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="body2" sx={{ 
-                  fontWeight: 500, 
-                  color: '#333',
+                  fontWeight: 600, 
+                  color: '#2c3e50',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  fontSize: '14px',
+                  mb: 0.5
                 }}>
                   {task.title}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#666' }}>
-                  {task.status} • {task.priority}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip 
+                    label={task.status} 
+                    size="small" 
+                    sx={{ 
+                      height: '20px',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      backgroundColor: `${getStatusColor(task.status)}20`,
+                      color: getStatusColor(task.status),
+                      border: `1px solid ${getStatusColor(task.status)}40`
+                    }} 
+                  />
+                  <Chip 
+                    label={task.priority} 
+                    size="small" 
+                    sx={{ 
+                      height: '20px',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      backgroundColor: `${getPriorityColor(task.priority)}20`,
+                      color: getPriorityColor(task.priority),
+                      border: `1px solid ${getPriorityColor(task.priority)}40`
+                    }} 
+                  />
+                </Box>
               </Box>
             </Box>
           </Grid>
@@ -513,54 +716,148 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
               position: 'relative', 
               height: '100%', 
               p: 1,
-              borderRight: '1px solid #e0e0e0'
+              borderRight: '1px solid #e0e0e0',
+              background: 'linear-gradient(135deg, #ffffff 0%, #fafbfc 100%)',
+              display: 'flex',
+              alignItems: 'center'
             }}>
-              <Box
-                onMouseEnter={(e) => handleMouseEnter(e, task)}
-                onMouseLeave={handleMouseLeave}
-                onClick={() => handleTaskClick(task)}
-                sx={{
-                  position: 'absolute',
-                  left: `${position.left}%`,
-                  width: `${position.width}%`,
-                  height: 32,
-                  bgcolor: getStatusColor(task.status),
-                  borderRadius: 1.5,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: 1.5,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                  }
-                }}
+              {/* Líneas de guía verticales */}
+              {Array.from({ length: 7 }, (_, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    position: 'absolute',
+                    left: `${(i * 100) / 7}%`,
+                    top: '0',
+                    bottom: '0',
+                    width: '1px',
+                    background: 'linear-gradient(180deg, transparent 0%, #e0e0e0 20%, #e0e0e0 80%, transparent 100%)',
+                    opacity: 0.5
+                  }}
+                />
+              ))}
+              <Tooltip 
+                title={
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      {task.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                      Estado: {task.status}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                      Prioridad: {task.priority}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                      Progreso: {progress}%
+                    </Typography>
+                    <Typography variant="body2">
+                      Vencimiento: {new Date(task.due_date).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
               >
-                <Typography variant="body2" sx={{ 
-                  color: 'white', 
-                  fontWeight: 500,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  flex: 1,
-                  fontSize: '0.875rem'
-                }}>
-                  {task.title}
-                </Typography>
-                {progress > 0 && (
-                  <Box sx={{ ml: 1, minWidth: 16 }}>
-                    <Typography variant="caption" sx={{ 
-                      color: 'white', 
-                      fontWeight: 600,
-                      fontSize: '0.75rem'
+                <Box
+                  onMouseEnter={(e) => handleMouseEnter(e, task)}
+                  onMouseLeave={handleMouseLeave}
+                  onClick={() => handleTaskClick(task)}
+                  sx={{
+                    position: 'absolute',
+                    left: `${position.left}%`,
+                    width: `${position.width}%`,
+                    height: 36,
+                    background: getTaskGradient(task.status, task.priority),
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    px: 1.5,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px) scale(1.02)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                      zIndex: 10
+                    }
+                  }}
+                >
+                  {/* Barra de progreso interna */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      height: '100%',
+                      width: `${progress}%`,
+                      background: 'rgba(255,255,255,0.3)',
+                      borderRadius: '8px 0 0 8px',
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
+                  
+                  {/* Contenido de la barra */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    zIndex: 1
+                  }}>
+                    {/* Icono de estado */}
+                    <Box sx={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(255,255,255,0.9)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      color: getStatusColor(task.status)
                     }}>
+                      {task.status === 'Completada' ? '✓' : 
+                       task.priority === 'Urgente' || task.priority === 'Crítica' ? '!' :
+                       task.is_milestone ? 'M' : '●'}
+                    </Box>
+                    
+                    {/* Nombre de la tarea */}
+                    <Typography
+                      sx={{
+                        color: 'white',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                        mx: 1
+                      }}
+                    >
+                      {task.title}
+                    </Typography>
+                    
+                    {/* Porcentaje de progreso */}
+                    <Typography
+                      sx={{
+                        color: 'white',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        minWidth: '28px',
+                        textAlign: 'right'
+                      }}
+                    >
                       {progress}%
                     </Typography>
                   </Box>
-                )}
-              </Box>
+                </Box>
+              </Tooltip>
               
               {/* Barra de progreso mejorada */}
               {progress > 0 && (
@@ -625,7 +922,21 @@ const ModernGanttProfessional = ({ projectId, filterByRole = true }) => {
       height: '100%', 
       display: 'flex', 
       bgcolor: '#f8f9fa',
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      '& @keyframes pulse': {
+        '0%': {
+          transform: 'scale(1)',
+          opacity: 1
+        },
+        '50%': {
+          transform: 'scale(1.1)',
+          opacity: 0.7
+        },
+        '100%': {
+          transform: 'scale(1)',
+          opacity: 1
+        }
+      }
     }}>
       {/* Sidebar */}
       <Fade in={!sidebarCollapsed} timeout={300}>

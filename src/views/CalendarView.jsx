@@ -1,38 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
   Typography,
-  IconButton,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack
+  Input,
+  Chip
 } from '@mui/material';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Today,
-  Add,
-  Event,
-  MoreVert
-} from '@mui/icons-material';
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { es } from 'date-fns/locale';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/auth/AuthContext';
 import dataService from '../utils/dataService';
 
@@ -40,310 +13,350 @@ const GREEN = '#2AAC26';
 
 const CalendarView = () => {
   const { user } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [viewMode, setViewMode] = useState('month');
-  const [eventDialogOpen, setEventDialogOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    startDate: new Date(),
-    endDate: new Date(),
-    type: 'task',
-    priority: 'media',
-    projectId: '',
-    assignedUsers: []
-  });
+
+  // Fecha de hoy para el cálculo dinámico
+  const today = new Date();
+  
+  // Calcular las 5 semanas centradas en la semana que contiene el 8 de septiembre de 2025
+  const targetDate = new Date('2025-09-08');
+  const weeks = useMemo(() => {
+    const weeksArray = [];
+    
+    // Encontrar el lunes de la semana que contiene el 8 de septiembre
+    const targetMonday = new Date(targetDate);
+    const dayOfWeek = targetDate.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    targetMonday.setDate(targetDate.getDate() + daysToMonday);
+    
+    // Generar 5 semanas consecutivas
+    for (let i = 0; i < 5; i++) {
+      const weekStart = new Date(targetMonday);
+      weekStart.setDate(targetMonday.getDate() + (i * 7));
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      weeksArray.push({
+        number: i + 1,
+        start: weekStart,
+        end: weekEnd,
+        label: `Week ${i + 1}`
+      });
+    }
+    
+    return weeksArray;
+  }, []);
+
+  // Calcular la posición de la línea "Hoy" dinámicamente
+  const todayPosition = useMemo(() => {
+    const todayDate = new Date();
+    const firstWeekStart = weeks[0]?.start;
+    const lastWeekEnd = weeks[4]?.end;
+    
+    if (!firstWeekStart || !lastWeekEnd) return 0;
+    
+    // Verificar si hoy está dentro del rango de las 5 semanas
+    if (todayDate < firstWeekStart || todayDate > lastWeekEnd) {
+      return null; // No mostrar línea si hoy está fuera del rango
+    }
+    
+    // Calcular la posición como porcentaje
+    const totalDays = Math.ceil((lastWeekEnd - firstWeekStart) / (1000 * 60 * 60 * 24)) + 1;
+    const daysFromStart = Math.ceil((todayDate - firstWeekStart) / (1000 * 60 * 60 * 24));
+    
+    return (daysFromStart / totalDays) * 100;
+  }, [weeks]);
 
   useEffect(() => {
-    loadCalendarData();
+    loadTasks();
   }, [user]);
 
-  const loadCalendarData = async () => {
+  const loadTasks = async () => {
     try {
       const userTasks = dataService.getTasksByUser(user.id);
       const allProjects = dataService.getProjects();
       
-      const taskEvents = userTasks.map(task => ({
-        id: `task-${task.id}`,
-        title: task.title,
-        description: task.description,
-        startDate: new Date(task.due_date),
-        endDate: new Date(task.due_date),
-        type: 'task',
-        priority: task.priority,
-        status: task.status,
-        projectId: task.project_id,
-        projectName: allProjects.find(p => p.id === task.project_id)?.name || 'Sin proyecto',
-        assignedUsers: task.assigned_users || [],
-        color: getEventColor(task.priority, task.status)
-      }));
+      // Enriquecer tareas con información del proyecto
+      const enrichedTasks = userTasks.map(task => {
+        const project = allProjects.find(p => p.id === task.project_id);
+        return {
+          ...task,
+          projectName: project?.name || 'Sin proyecto',
+          projectColor: project?.color || GREEN
+        };
+      });
 
-      setEvents(taskEvents);
-      setTasks(userTasks);
+      setTasks(enrichedTasks);
       setProjects(allProjects);
     } catch (error) {
-      console.error('Error loading calendar data:', error);
+      console.error('Error loading tasks:', error);
     }
   };
 
-  const getEventColor = (priority, status) => {
-    if (status === 'Completada') return '#4caf50';
-    if (priority === 'Crítica') return '#f44336';
-    if (priority === 'Alta') return '#ff9800';
-    if (priority === 'Media') return '#2196f3';
-    return '#9e9e9e';
-  };
-
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-  };
-
-  const handleMonthChange = (direction) => {
-    const newDate = new Date(currentDate);
-    if (direction === 'prev') {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else {
-      newDate.setMonth(newDate.getMonth() + 1);
-    }
-    setCurrentDate(newDate);
-  };
-
-  const handleToday = () => {
-    const today = new Date();
-    setCurrentDate(today);
-    setSelectedDate(today);
-  };
-
-  const getEventsForDate = (date) => {
-    return events.filter(event => {
-      const eventDate = new Date(event.startDate);
-      return eventDate.toDateString() === date.toDateString();
-    });
-  };
-
-  const getEventsForMonth = () => {
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // Función para determinar en qué semanas aparece una tarea
+  const getTaskWeeks = (task) => {
+    const taskStart = new Date(task.start_date || task.created_at);
+    const taskEnd = new Date(task.due_date || task.start_date || task.created_at);
     
-    return events.filter(event => {
-      const eventDate = new Date(event.startDate);
-      return eventDate >= startOfMonth && eventDate <= endOfMonth;
+    return weeks.map((week, index) => {
+      const weekStart = week.start;
+      const weekEnd = week.end;
+      
+      // Verificar si la tarea se superpone con esta semana
+      const overlaps = taskStart <= weekEnd && taskEnd >= weekStart;
+      
+      return {
+        weekIndex: index,
+        weekNumber: week.number,
+        hasTask: overlaps,
+        isStart: taskStart >= weekStart && taskStart <= weekEnd,
+        isEnd: taskEnd >= weekStart && taskEnd <= weekEnd
+      };
     });
-  };
-
-  const handleCreateEvent = () => {
-    setNewEvent({
-      title: '',
-      description: '',
-      startDate: selectedDate,
-      endDate: selectedDate,
-      type: 'task',
-      priority: 'media',
-      projectId: '',
-      assignedUsers: []
-    });
-    setEventDialogOpen(true);
-  };
-
-  const handleSaveEvent = () => {
-    console.log('Saving event:', newEvent);
-    setEventDialogOpen(false);
-    loadCalendarData();
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Controles de navegación */}
-      <Paper sx={{ 
-        p: 2, 
-        mb: 2, 
-        borderRadius: 3,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
+      {/* Título del componente */}
+      <Typography variant="h4" sx={{ 
+        fontWeight: 600, 
+        fontFamily: 'Poppins, sans-serif',
+        color: '#333',
+        mb: 3
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton 
-              onClick={() => handleMonthChange('prev')}
-              sx={{ 
-                bgcolor: '#f5f5f5',
-                '&:hover': { bgcolor: '#e0e0e0' },
-                borderRadius: 2
-              }}
-            >
-              <ChevronLeft />
-            </IconButton>
-            
-            <Typography variant="h6" sx={{ 
-              minWidth: 200, 
-              textAlign: 'center', 
-              fontWeight: 600, 
-              color: '#333',
-              fontFamily: 'Poppins, sans-serif'
-            }}>
-              {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-            </Typography>
-            
-            <IconButton 
-              onClick={() => handleMonthChange('next')}
-              sx={{ 
-                bgcolor: '#f5f5f5',
-                '&:hover': { bgcolor: '#e0e0e0' },
-                borderRadius: 2
-              }}
-            >
-              <ChevronRight />
-            </IconButton>
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<Today />}
-              onClick={handleToday}
-              size="small"
-              sx={{ 
-                borderColor: GREEN, 
-                color: GREEN,
-                '&:hover': { borderColor: GREEN, bgcolor: `${GREEN}10` }
-              }}
-            >
-              Hoy
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleCreateEvent}
-              size="small"
-              sx={{ bgcolor: GREEN, '&:hover': { bgcolor: '#1f9a1f' } }}
-            >
-              Nuevo Evento
-            </Button>
-          </Box>
-        </Box>
-      </Paper>
+        Calendario del Proyecto
+      </Typography>
 
-      {/* Vista del calendario */}
+      {/* Contenedor principal del Gantt */}
       <Paper sx={{ 
         flex: 1, 
         borderRadius: 3,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        overflow: 'hidden'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        overflow: 'hidden',
+        border: '1px solid #e0e0e0'
       }}>
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Header de Timeline */}
+        <Box sx={{ 
+          borderBottom: '2px solid #e0e0e0',
+          bgcolor: '#f8f9fa'
+        }}>
+          {/* Input de Mes */}
           <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            p: 2,
+            p: 2, 
             borderBottom: '1px solid #e0e0e0',
-            bgcolor: '#f8f9fa'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
-            <Typography variant="h5" sx={{ 
-              fontWeight: 600, 
-              fontFamily: 'Poppins, sans-serif',
-              color: '#333'
-            }}>
-              {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-            </Typography>
+            <Input
+              value="Septiembre 2025"
+              readOnly
+              sx={{
+                fontSize: '1.2rem',
+                fontWeight: 600,
+                fontFamily: 'Poppins, sans-serif',
+                color: '#333',
+                '& .MuiInput-input': {
+                  textAlign: 'center',
+                  border: 'none',
+                  outline: 'none'
+                }
+              }}
+            />
           </Box>
 
-          <Box sx={{ flex: 1, p: 2 }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
-              <DateCalendar
-                value={selectedDate}
-                onChange={handleDateChange}
-                sx={{
-                  width: '100%',
-                  '& .MuiPickersDay-root': {
-                    fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 500,
-                    position: 'relative'
-                  },
-                  '& .MuiPickersDay-root.Mui-selected': {
-                    bgcolor: GREEN,
-                    color: '#fff',
-                    '&:hover': {
-                      bgcolor: '#1f9a1f'
-                    }
-                  },
-                  '& .MuiPickersCalendarHeader-root': {
-                    fontFamily: 'Poppins, sans-serif'
-                  }
-                }}
-              />
-            </LocalizationProvider>
+          {/* Semanas */}
+          <Box sx={{ 
+            display: 'grid',
+            gridTemplateColumns: '200px repeat(5, 1fr)',
+            minHeight: '60px',
+            alignItems: 'center'
+          }}>
+            {/* Columna vacía para alineación */}
+            <Box></Box>
+            
+            {/* Headers de las semanas */}
+            {weeks.map((week, index) => (
+              <Box key={week.number} sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 1,
+                borderRight: index < 4 ? '1px solid #e0e0e0' : 'none',
+                position: 'relative',
+                minHeight: '60px'
+              }}>
+                <Typography variant="subtitle2" sx={{
+                  fontWeight: 600,
+                  fontFamily: 'Poppins, sans-serif',
+                  color: '#666',
+                  mb: 0.5
+                }}>
+                  {week.label}
+                </Typography>
+                <Typography variant="caption" sx={{
+                  fontFamily: 'Poppins, sans-serif',
+                  color: '#999',
+                  fontSize: '0.75rem'
+                }}>
+                  {week.start.getDate()}/{week.start.getMonth() + 1} - {week.end.getDate()}/{week.end.getMonth() + 1}
+                </Typography>
+              </Box>
+            ))}
           </Box>
         </Box>
-      </Paper>
 
-      {/* Dialog para crear eventos */}
-      <Dialog open={eventDialogOpen} onClose={() => setEventDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontFamily: 'Poppins, sans-serif' }}>
-          Nuevo Evento
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Título"
-                value={newEvent.title}
-                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                sx={{ fontFamily: 'Poppins, sans-serif' }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Descripción"
-                value={newEvent.description}
-                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                sx={{ fontFamily: 'Poppins, sans-serif' }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Fecha de inicio"
-                type="date"
-                value={newEvent.startDate.toISOString().split('T')[0]}
-                onChange={(e) => setNewEvent({ ...newEvent, startDate: new Date(e.target.value) })}
-                InputLabelProps={{ shrink: true }}
-                sx={{ fontFamily: 'Poppins, sans-serif' }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Fecha de fin"
-                type="date"
-                value={newEvent.endDate.toISOString().split('T')[0]}
-                onChange={(e) => setNewEvent({ ...newEvent, endDate: new Date(e.target.value) })}
-                InputLabelProps={{ shrink: true }}
-                sx={{ fontFamily: 'Poppins, sans-serif' }}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEventDialogOpen(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            variant="contained" 
-            onClick={handleSaveEvent}
-            sx={{ bgcolor: GREEN, '&:hover': { bgcolor: '#1f9a1f' } }}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {/* Área de Tareas */}
+        <Box sx={{ position: 'relative' }}>
+          {/* Línea de "Hoy" */}
+          {todayPosition !== null && (
+            <Box sx={{
+              position: 'absolute',
+              left: `calc(200px + ${todayPosition}%)`,
+              top: 0,
+              bottom: 0,
+              width: '2px',
+              bgcolor: '#f44336',
+              zIndex: 10,
+              '&::before': {
+                content: '"Hoy"',
+                position: 'absolute',
+                top: '-8px',
+                left: '-15px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#f44336',
+                fontFamily: 'Poppins, sans-serif',
+                bgcolor: 'white',
+                px: 0.5,
+                borderRadius: '4px'
+              }
+            }} />
+          )}
+
+          {/* Lista de Tareas */}
+          {tasks.map((task, taskIndex) => {
+            const taskWeeks = getTaskWeeks(task);
+            
+            return (
+              <Box key={task.id} sx={{
+                display: 'grid',
+                gridTemplateColumns: '200px repeat(5, 1fr)',
+                minHeight: '50px',
+                borderBottom: '1px solid #f0f0f0',
+                alignItems: 'center',
+                '&:hover': {
+                  bgcolor: '#f8f9fa'
+                }
+              }}>
+                {/* Descripción de la tarea */}
+                <Box sx={{
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  borderRight: '1px solid #e0e0e0',
+                  bgcolor: 'white'
+                }}>
+                  <Box sx={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    bgcolor: task.projectColor || GREEN,
+                    flexShrink: 0
+                  }} />
+                  <Typography variant="body2" sx={{
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 500,
+                    color: '#333',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {task.title}
+                  </Typography>
+                </Box>
+
+                {/* Barras de duración para cada semana */}
+                {taskWeeks.map((weekInfo, weekIndex) => (
+                  <Box key={weekIndex} sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 1,
+                    borderRight: weekIndex < 4 ? '1px solid #e0e0e0' : 'none',
+                    position: 'relative',
+                    minHeight: '50px'
+                  }}>
+                    {weekInfo.hasTask && (
+                      <Box sx={{
+                        width: '100%',
+                        height: '24px',
+                        bgcolor: task.projectColor || GREEN,
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        opacity: 0.8,
+                        '&:hover': {
+                          opacity: 1
+                        }
+                      }}>
+                        {/* Indicadores de inicio y fin */}
+                        {weekInfo.isStart && (
+                          <Box sx={{
+                            position: 'absolute',
+                            left: '2px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '0',
+                            height: '0',
+                            borderLeft: '6px solid white',
+                            borderTop: '6px solid transparent',
+                            borderBottom: '6px solid transparent'
+                          }} />
+                        )}
+                        {weekInfo.isEnd && (
+                          <Box sx={{
+                            position: 'absolute',
+                            right: '2px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '0',
+                            height: '0',
+                            borderRight: '6px solid white',
+                            borderTop: '6px solid transparent',
+                            borderBottom: '6px solid transparent'
+                          }} />
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            );
+          })}
+
+          {/* Mensaje si no hay tareas */}
+          {tasks.length === 0 && (
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '200px',
+              color: '#999'
+            }}>
+              <Typography variant="body1" sx={{ fontFamily: 'Poppins, sans-serif' }}>
+                No hay tareas para mostrar
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Paper>
     </Box>
   );
 };

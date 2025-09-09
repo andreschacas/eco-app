@@ -15,6 +15,8 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import ChevronRight from '@mui/icons-material/ChevronRight';
 import dataService from '../../utils/dataService';
 import { useAuth } from '../../context/auth/AuthContext';
 import DashboardWidgets from '../../components/dashboard/DashboardWidgets';
@@ -26,12 +28,30 @@ const CoordinatorDashboard = ({ onNavigate }) => {
   const [myProjects, setMyProjects] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [maxSlides, setMaxSlides] = useState(0);
 
   useEffect(() => {
     if (user) {
     loadDashboardData();
     }
   }, [user]);
+
+  // Calcular el número máximo de slides
+  useEffect(() => {
+    if (myProjects.length > 0) {
+      // Calcular cuántos slides necesitamos (1 proyecto por slide)
+      const totalSlides = Math.max(0, myProjects.length - 3);
+      setMaxSlides(totalSlides);
+      // Resetear el slide actual si es mayor que el máximo
+      if (currentSlide > totalSlides) {
+        setCurrentSlide(0);
+      }
+    } else {
+      setMaxSlides(0);
+      setCurrentSlide(0);
+    }
+  }, [myProjects]);
 
   const loadDashboardData = () => {
     try {
@@ -209,9 +229,38 @@ const CoordinatorDashboard = ({ onNavigate }) => {
 
       {/* Projects Section */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, fontFamily: 'Poppins, sans-serif' }}>
-                Mis Proyectos
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+            Mis Proyectos
+          </Typography>
+          
+          {myProjects.length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconButton
+                onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
+                disabled={currentSlide === 0}
+                sx={{
+                  color: GREEN,
+                  '&:disabled': { color: '#ccc' },
+                  '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' }
+                }}
+              >
+                <ChevronLeft />
+              </IconButton>
+              <IconButton
+                onClick={() => setCurrentSlide(Math.min(maxSlides, currentSlide + 1))}
+                disabled={currentSlide >= maxSlides}
+                sx={{
+                  color: GREEN,
+                  '&:disabled': { color: '#ccc' },
+                  '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' }
+                }}
+              >
+                <ChevronRight />
+              </IconButton>
+            </Box>
+          )}
+        </Box>
 
         {myProjects.length === 0 ? (
           <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -225,14 +274,31 @@ const CoordinatorDashboard = ({ onNavigate }) => {
             </CardContent>
           </Card>
         ) : (
-              <Grid container spacing={3}>
-            {myProjects.map((project) => {
-              const progress = getProjectProgress(project);
-              const participants = getProjectParticipants(project.id);
-              const daysRemaining = getDaysRemaining(project.end_date);
+          <Box sx={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 3
+          }}>
+            <Box sx={{
+              display: 'flex',
+              transform: `translateX(-${currentSlide * (100 / 3)}%)`,
+              transition: 'transform 0.3s ease-in-out',
+              gap: 1.5
+            }}>
+              {myProjects.map((project) => {
+                const progress = getProjectProgress(project);
+                const participants = getProjectParticipants(project.id);
+                const daysRemaining = getDaysRemaining(project.end_date);
 
-              return (
-                <Grid item xs={12} md={6} lg={4} key={project.id}>
+                return (
+                  <Box
+                    key={project.id}
+                    sx={{
+                      minWidth: 'calc(33.333% - 6px)',
+                      flex: '0 0 calc(33.333% - 6px)',
+                      maxWidth: 'calc(33.333% - 6px)'
+                    }}
+                  >
                   <Card 
                     sx={{ 
                       borderRadius: 3, 
@@ -361,10 +427,11 @@ const CoordinatorDashboard = ({ onNavigate }) => {
                         </Box>
                       </CardContent>
                     </Card>
-                  </Grid>
-              );
-            })}
-              </Grid>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
         )}
       </Box>
 
@@ -394,6 +461,7 @@ const CoordinatorDashboard = ({ onNavigate }) => {
               </Button>
               <Button
                 variant="outlined"
+                onClick={() => onNavigate('coordinator-metrics')}
                 sx={{
                   borderColor: GREEN,
                   color: GREEN,

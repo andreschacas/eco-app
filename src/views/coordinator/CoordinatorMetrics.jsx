@@ -18,9 +18,24 @@ import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 import LinearProgress from '@mui/material/LinearProgress';
+import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import NatureIcon from '@mui/icons-material/Nature';
+import WaterIcon from '@mui/icons-material/Water';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import RecyclingIcon from '@mui/icons-material/Recycling';
+import ParkIcon from '@mui/icons-material/Park';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import SpeedIcon from '@mui/icons-material/Speed';
 import dataService from '../../utils/dataService';
 import { useAuth } from '../../context/auth/AuthContext';
 
@@ -140,6 +155,216 @@ const CoordinatorMetrics = ({ onNavigate }) => {
     }
   };
 
+  const getMetricIcon = (category) => {
+    switch (category) {
+      case 'Carbono': return <NatureIcon />;
+      case 'Energía': return <FlashOnIcon />;
+      case 'Agua': return <WaterIcon />;
+      case 'Residuos': return <RecyclingIcon />;
+      case 'Biodiversidad': return <ParkIcon />;
+      default: return <AssessmentIcon />;
+    }
+  };
+
+  const getTrendIcon = (progress) => {
+    if (progress > 80) return <TrendingUpIcon sx={{ color: '#4caf50' }} />;
+    if (progress > 50) return <TrendingFlatIcon sx={{ color: '#ff9800' }} />;
+    return <TrendingDownIcon sx={{ color: '#f44336' }} />;
+  };
+
+  const getTrendText = (progress) => {
+    if (progress > 80) return 'Excelente';
+    if (progress > 50) return 'Bueno';
+    return 'Necesita atención';
+  };
+
+  const getTrendColor = (progress) => {
+    if (progress > 80) return '#4caf50';
+    if (progress > 50) return '#ff9800';
+    return '#f44336';
+  };
+
+  const CircularProgress = ({ progress, size = 80, strokeWidth = 8, color = GREEN }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+    return (
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+        <svg width={size} height={size}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#e0e0e0"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            style={{
+              transition: 'stroke-dashoffset 0.5s ease-in-out',
+            }}
+          />
+        </svg>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700, color: color, fontFamily: 'Poppins, sans-serif' }}>
+            {Math.round(progress)}%
+          </Typography>
+        </Box>
+      </Box>
+    );
+  };
+
+  const MetricCard = ({ metric, onUpdate }) => {
+    const progress = getMetricProgress(metric);
+    const color = getMetricColor(metric.category);
+    const icon = getMetricIcon(metric.category);
+    const trendIcon = getTrendIcon(progress);
+    const trendText = getTrendText(progress);
+    const trendColor = getTrendColor(progress);
+
+    return (
+      <Card 
+        sx={{ 
+          borderRadius: 3, 
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+          }
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          {/* Header con icono y tendencia */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+            <Avatar sx={{ bgcolor: `${color}20`, color: color, width: 48, height: 48 }}>
+              {icon}
+            </Avatar>
+            <Box sx={{ textAlign: 'right' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                {trendIcon}
+                <Typography variant="caption" sx={{ color: trendColor, fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                  {trendText}
+                </Typography>
+              </Box>
+              <Chip 
+                label={metric.category} 
+                size="small" 
+                sx={{ 
+                  bgcolor: `${color}20`, 
+                  color: color, 
+                  fontWeight: 600,
+                  fontFamily: 'Poppins, sans-serif'
+                }} 
+              />
+            </Box>
+          </Box>
+
+          {/* Título de la métrica */}
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Poppins, sans-serif' }}>
+            {metric.name}
+          </Typography>
+
+          {/* Valor actual y objetivo */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: color, fontFamily: 'Poppins, sans-serif' }}>
+                {metric.current_value || 0}
+                <Typography component="span" variant="body2" sx={{ color: '#666', ml: 1, fontFamily: 'Poppins, sans-serif' }}>
+                  {metric.unit}
+                </Typography>
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                de {metric.target_value} {metric.unit}
+              </Typography>
+            </Box>
+            <CircularProgress progress={progress} color={color} size={80} />
+          </Box>
+
+          {/* Barra de progreso lineal */}
+          <Box sx={{ mb: 3 }}>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                bgcolor: '#e0e0e0',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: color,
+                  borderRadius: 4
+                }
+              }}
+            />
+          </Box>
+
+          {/* Información adicional */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SpeedIcon sx={{ fontSize: 16, color: '#666' }} />
+              <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                {progress > 100 ? 'Meta superada' : `${100 - progress}% restante`}
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ color: color, fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+              {progress}% completado
+            </Typography>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          {/* Botón de actualización */}
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<EditIcon />}
+            onClick={() => onUpdate(metric)}
+            sx={{
+              borderColor: color,
+              color: color,
+              textTransform: 'none',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 600,
+              py: 1.5,
+              '&:hover': { 
+                borderColor: color, 
+                bgcolor: `${color}10`,
+                transform: 'translateY(-1px)'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Actualizar Métrica
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const handleUpdateMetric = (metric) => {
     setEditingMetric(metric);
     setMetricForm({
@@ -248,89 +473,58 @@ const CoordinatorMetrics = ({ onNavigate }) => {
         </Card>
       )}
 
-      {/* Metrics Grid */}
-      <Grid container spacing={3}>
-        {metrics.map((metric) => {
-          const progress = getMetricProgress(metric);
-          const color = getMetricColor(metric.category);
-
-          return (
-            <Grid item xs={12} sm={6} md={4} key={metric.id}>
-              <Card 
-                sx={{ 
-                  borderRadius: 3, 
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
-                  }
-                }}
-              >
+      {/* Dashboard de Resumen */}
+      {metrics.length > 0 && (
+        <Card sx={{ mb: 4, borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <CardContent>
-                  {/* Header */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography 
-                        variant="h4" 
-                        sx={{ 
-                          fontWeight: 700, 
-                          color: color,
-                          fontFamily: 'Poppins, sans-serif',
-                          mb: 0.5
-                        }}
-                      >
-                        {metric.current_value || 0}
-                        <Typography 
-                          component="span" 
-                          variant="body2" 
-                          sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', ml: 1 }}
-                        >
-                          {metric.unit}
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontFamily: 'Poppins, sans-serif' }}>
+              📊 Resumen de Métricas Ambientales
                         </Typography>
+            
+            <Grid container spacing={3}>
+              {/* Progreso General */}
+              <Grid item xs={12} md={4}>
+                <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
+                  <CircularProgress 
+                    progress={metrics.reduce((acc, metric) => acc + getMetricProgress(metric), 0) / metrics.length} 
+                    size={100} 
+                    color={GREEN}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600, mt: 2, fontFamily: 'Poppins, sans-serif' }}>
+                    Progreso General
                       </Typography>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                        {metric.name}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleUpdateMetric(metric)}
-                      sx={{ color: color }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </Box>
-
-                  {/* Category */}
-                  <Box sx={{ 
-                    display: 'inline-block',
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 1,
-                    bgcolor: `${color}20`,
-                    color: color,
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    fontFamily: 'Poppins, sans-serif',
-                    mb: 2
-                  }}>
-                    {metric.category}
-                  </Box>
-
-                  {/* Progress */}
-                  <Box sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500 }}>
-                        Progreso
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: color }}>
-                        {progress}%
+                  <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                    {Math.round(metrics.reduce((acc, metric) => acc + getMetricProgress(metric), 0) / metrics.length)}% promedio
                       </Typography>
                     </Box>
+              </Grid>
+
+              {/* Métricas por Categoría */}
+              <Grid item xs={12} md={8}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Poppins, sans-serif' }}>
+                  Progreso por Categoría
+                </Typography>
+                <Stack spacing={2}>
+                  {['Carbono', 'Energía', 'Agua', 'Residuos', 'Biodiversidad'].map(category => {
+                    const categoryMetrics = metrics.filter(m => m.category === category);
+                    if (categoryMetrics.length === 0) return null;
+                    
+                    const avgProgress = categoryMetrics.reduce((acc, metric) => acc + getMetricProgress(metric), 0) / categoryMetrics.length;
+                    const color = getMetricColor(category);
+                    const icon = getMetricIcon(category);
+                    
+                    return (
+                      <Box key={category} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ bgcolor: `${color}20`, color: color, width: 32, height: 32 }}>
+                          {icon}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'Poppins, sans-serif' }}>
+                            {category}
+                      </Typography>
                     <LinearProgress
                       variant="determinate"
-                      value={progress}
+                            value={avgProgress}
                       sx={{
                         height: 6,
                         borderRadius: 3,
@@ -342,38 +536,30 @@ const CoordinatorMetrics = ({ onNavigate }) => {
                       }}
                     />
                   </Box>
-
-                  {/* Target */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                      Meta: {metric.target_value} {metric.unit}
+                        <Typography variant="body2" sx={{ color: color, fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                          {Math.round(avgProgress)}%
                     </Typography>
-                    <TrendingUpIcon sx={{ fontSize: 16, color: '#666' }} />
                   </Box>
-
-                  {/* Update button */}
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={() => handleUpdateMetric(metric)}
-                    sx={{
-                      borderColor: color,
-                      color: color,
-                      textTransform: 'none',
-                      fontFamily: 'Poppins, sans-serif',
-                      '&:hover': { 
-                        borderColor: color, 
-                        bgcolor: `${color}10` 
-                      }
-                    }}
-                  >
-                    Actualizar Valor
-                  </Button>
+                    );
+                  })}
+                </Stack>
+              </Grid>
+            </Grid>
                 </CardContent>
               </Card>
+      )}
+
+      {/* Métricas Individuales */}
+      <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, fontFamily: 'Poppins, sans-serif' }}>
+        🎯 Métricas Detalladas
+      </Typography>
+      
+      <Grid container spacing={3}>
+        {metrics.map((metric) => (
+          <Grid item xs={12} sm={6} lg={4} key={metric.id}>
+            <MetricCard metric={metric} onUpdate={handleUpdateMetric} />
             </Grid>
-          );
-        })}
+        ))}
       </Grid>
 
       {metrics.length === 0 && selectedProject && (
@@ -416,18 +602,149 @@ const CoordinatorMetrics = ({ onNavigate }) => {
       )}
 
       {/* Update Metric Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600 }}>
-          Actualizar Métrica: {editingMetric?.name}
+      <Dialog 
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            border: '1px solid #e0e0e0',
+            fontFamily: 'Poppins, sans-serif'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #f0f0f0',
+          pb: 3,
+          pt: 3,
+          px: 3
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {editingMetric && (
+              <Avatar sx={{ 
+                bgcolor: `${getMetricColor(editingMetric.category)}20`, 
+                color: getMetricColor(editingMetric.category),
+                width: 40,
+                height: 40
+              }}>
+                {getMetricIcon(editingMetric.category)}
+              </Avatar>
+            )}
+            <Box>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 600, 
+                fontFamily: 'Poppins, sans-serif',
+                color: '#333',
+                fontSize: '1.25rem'
+              }}>
+                Actualizar Métrica
+              </Typography>
+              <Typography variant="body2" sx={{ 
+                color: '#666', 
+                fontFamily: 'Poppins, sans-serif' 
+              }}>
+                {editingMetric?.name}
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            onClick={() => setOpenDialog(false)}
+            sx={{
+              minWidth: 'auto',
+              p: 1,
+              color: '#666',
+              '&:hover': {
+                bgcolor: '#f5f5f5'
+              }
+            }}
+          >
+            ✕
+          </Button>
         </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+
+        <DialogContent sx={{ p: 3, pt: 2 }}>
+          <Grid container spacing={3}>
+            {/* Información Actual */}
+            <Grid item xs={12} md={6}>
+              <Card sx={{ 
+                bgcolor: '#f8f9fa', 
+                borderRadius: 2, 
+                p: 2,
+                border: '1px solid #e9ecef'
+              }}>
+                <Typography variant="subtitle1" sx={{ 
+                  fontWeight: 600, 
+                  mb: 2, 
+                  fontFamily: 'Poppins, sans-serif',
+                  color: '#333'
+                }}>
+                  📊 Estado Actual
+                </Typography>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                    Valor actual:
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: 600, 
+                    color: getMetricColor(editingMetric?.category),
+                    fontFamily: 'Poppins, sans-serif'
+                  }}>
+                    {editingMetric?.current_value || 0} {editingMetric?.unit}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-              Valor actual: <strong>{editingMetric?.current_value || 0} {editingMetric?.unit}</strong>
+                    Meta:
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: 600, 
+                    color: '#333',
+                    fontFamily: 'Poppins, sans-serif'
+                  }}>
+                    {editingMetric?.target_value} {editingMetric?.unit}
             </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-              Meta: <strong>{editingMetric?.target_value} {editingMetric?.unit}</strong>
+                    Progreso:
+                  </Typography>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: 600, 
+                    color: getMetricColor(editingMetric?.category),
+                    fontFamily: 'Poppins, sans-serif'
+                  }}>
+                    {editingMetric ? getMetricProgress(editingMetric) : 0}%
             </Typography>
+                </Box>
+
+                <LinearProgress
+                  variant="determinate"
+                  value={editingMetric ? getMetricProgress(editingMetric) : 0}
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    bgcolor: '#e0e0e0',
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: getMetricColor(editingMetric?.category),
+                      borderRadius: 3
+                    }
+                  }}
+                />
+              </Card>
+            </Grid>
+
+            {/* Formulario de Actualización */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
               fullWidth
               label={`Nuevo valor (${editingMetric?.unit})`}
@@ -435,7 +752,25 @@ const CoordinatorMetrics = ({ onNavigate }) => {
               value={metricForm.value}
               onChange={(e) => setMetricForm({ ...metricForm, value: e.target.value })}
               required
-            />
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        mr: 1,
+                        color: getMetricColor(editingMetric?.category)
+                      }}>
+                        {editingMetric && getMetricIcon(editingMetric.category)}
+                      </Box>
+                    )
+                  }}
+                />
+
             <TextField
               fullWidth
               label="Notas (opcional)"
@@ -444,22 +779,88 @@ const CoordinatorMetrics = ({ onNavigate }) => {
               value={metricForm.notes}
               onChange={(e) => setMetricForm({ ...metricForm, notes: e.target.value })}
               placeholder="Agregar observaciones sobre esta actualización..."
-            />
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2
+                    }
+                  }}
+                />
+
+                {/* Vista previa del nuevo progreso */}
+                {metricForm.value && !isNaN(parseFloat(metricForm.value)) && editingMetric && (
+                  <Card sx={{ 
+                    bgcolor: '#e8f5e8', 
+                    borderRadius: 2, 
+                    p: 2,
+                    border: '1px solid #4caf50'
+                  }}>
+                    <Typography variant="subtitle2" sx={{ 
+                      fontWeight: 600, 
+                      mb: 1, 
+                      fontFamily: 'Poppins, sans-serif',
+                      color: '#2e7d32'
+                    }}>
+                      🔮 Vista Previa
+                    </Typography>
+                    <Typography variant="body2" sx={{ 
+                      color: '#2e7d32', 
+                      fontFamily: 'Poppins, sans-serif',
+                      mb: 1
+                    }}>
+                      Nuevo progreso: {Math.min(100, Math.round((parseFloat(metricForm.value) / editingMetric.target_value) * 100))}%
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.min(100, Math.round((parseFloat(metricForm.value) / editingMetric.target_value) * 100))}
+                      sx={{
+                        height: 4,
+                        borderRadius: 2,
+                        bgcolor: '#c8e6c9',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: '#4caf50',
+                          borderRadius: 2
+                        }
+                      }}
+                    />
+                  </Card>
+                )}
           </Box>
+            </Grid>
+          </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>
+
+        <DialogActions sx={{ p: 3, pt: 0, gap: 2 }}>
+          <Button 
+            onClick={() => setOpenDialog(false)}
+            variant="outlined"
+            sx={{
+              textTransform: 'none',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 500,
+              px: 3,
+              py: 1
+            }}
+          >
             Cancelar
           </Button>
           <Button 
             onClick={handleSaveMetric} 
             variant="contained" 
+            startIcon={<EditIcon />}
             sx={{ 
-              bgcolor: GREEN,
-              '&:hover': { bgcolor: '#1f9a1f' }
+              bgcolor: getMetricColor(editingMetric?.category) || GREEN,
+              textTransform: 'none',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 600,
+              px: 3,
+              py: 1,
+              '&:hover': { 
+                bgcolor: getMetricColor(editingMetric?.category) || GREEN,
+                filter: 'brightness(0.9)'
+              }
             }}
           >
-            Actualizar
+            Actualizar Métrica
           </Button>
         </DialogActions>
       </Dialog>

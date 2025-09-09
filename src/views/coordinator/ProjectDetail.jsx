@@ -44,7 +44,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import dataService from '../../utils/dataService';
 import KanbanBoardNew from '../../components/kanban/KanbanBoardNew';
-import ModernGanttProfessional from '../../components/gantt/ModernGanttProfessional';
+import StaticGanttChart from '../../components/gantt/StaticGanttChart';
+import ProjectChat from '../../components/chat/ProjectChat';
 import { useAuth } from '../../context/auth/AuthContext';
 
 const GREEN = '#2AAC26';
@@ -137,7 +138,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
       selectedUsers.forEach(user => {
         const existing = participants.find(p => p.id === user.id);
         if (!existing) {
-          dataService.addUserToProject(currentProject.id, user.id);
+          dataService.addUserToProject(currentProject.id, user.id, user?.id);
         }
       });
 
@@ -623,6 +624,18 @@ const ProjectDetail = ({ project, onNavigate }) => {
 
         {/* Comments Tab */}
         <TabPanel value={activeTab} index={3}>
+          <Box sx={{ height: 'calc(100vh - 200px)', overflow: 'hidden' }}>
+            <ProjectChat 
+              projectId={project.id}
+              onCommentAdded={() => loadProjectData()}
+              onCommentUpdated={() => loadProjectData()}
+              onCommentDeleted={() => loadProjectData()}
+            />
+          </Box>
+        </TabPanel>
+
+        {/* Old Comments Tab - Replaced */}
+        <TabPanel value={activeTab} index={999}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
@@ -967,7 +980,7 @@ const ProjectDetail = ({ project, onNavigate }) => {
         {/* Calendar Tab - Gantt Chart */}
                 <TabPanel value={activeTab} index={4}>
           <Box sx={{ height: '100vh', overflow: 'hidden' }}>
-            <ModernGanttProfessional projectId={project.id} filterByRole={false} />
+            <StaticGanttChart projectId={project.id} filterByRole={false} />
           </Box>
         </TabPanel>
       </Card>

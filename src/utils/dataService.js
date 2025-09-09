@@ -1,4 +1,5 @@
 // Sistema de gestión de datos con localStorage para ECO - Sistema de Proyectos de Energía y Cambio Climático
+import notificationService from './notificationService';
 
 const STORAGE_KEYS = {
   USERS: 'eco_users',
@@ -12,7 +13,8 @@ const STORAGE_KEYS = {
   METRIC_TYPES: 'eco_metric_types',
   METRIC_HISTORY: 'eco_metric_history',
   COMMENTS: 'eco_comments',
-  ATTACHMENTS: 'eco_attachments'
+  ATTACHMENTS: 'eco_attachments',
+  PROJECT_FILES: 'eco_project_files'
 };
 
 // Datos iniciales del sistema
@@ -84,8 +86,8 @@ const INITIAL_DATA = {
       id: 1,
       name: 'Tesis Huella de Carbono',
       description: 'Investigación sobre la huella de carbono en procesos industriales',
-      start_date: '2025-01-15',
-      end_date: '2025-12-15',
+      start_date: '2025-08-01',
+      end_date: '2025-12-31',
       status: 'En progreso',
       creator_id: 2,
       created_at: new Date().toISOString()
@@ -94,8 +96,8 @@ const INITIAL_DATA = {
       id: 2,
       name: 'Pared Verde Sustentable',
       description: 'Implementación de muros verdes para reducir la temperatura urbana',
-      start_date: '2025-02-01',
-      end_date: '2025-11-30',
+      start_date: '2025-09-01',
+      end_date: '2026-02-28',
       status: 'En progreso',
       creator_id: 2,
       created_at: new Date().toISOString()
@@ -104,8 +106,8 @@ const INITIAL_DATA = {
       id: 3,
       name: 'Tesis Huella Hídrica',
       description: 'Análisis del consumo de agua en la agricultura local',
-      start_date: '2025-03-01',
-      end_date: '2025-02-28',
+      start_date: '2025-10-01',
+      end_date: '2026-03-31',
       status: 'Planificación',
       creator_id: 2,
       created_at: new Date().toISOString()
@@ -268,7 +270,7 @@ const INITIAL_DATA = {
       description: 'Definir y aprobar el nombre final para el evento de sostenibilidad',
       status: 'Completada',
       priority: 'Alta',
-      due_date: '2025-01-15',
+      due_date: '2025-08-15',
       project_id: 1,
       assigned_users: [3],
       created_at: new Date().toISOString()
@@ -279,7 +281,7 @@ const INITIAL_DATA = {
       description: 'Completar el presupuesto detallado para todas las actividades del evento',
       status: 'En progreso',
       priority: 'Crítica',
-      due_date: '2025-01-20',
+      due_date: '2025-09-20',
       project_id: 1,
       assigned_users: [4],
       created_at: new Date().toISOString()
@@ -290,7 +292,7 @@ const INITIAL_DATA = {
       description: 'Desarrollar y presentar tres propuestas de temas principales para la conferencia',
       status: 'En progreso',
       priority: 'Alta',
-      due_date: '2025-01-25',
+      due_date: '2025-10-15',
       project_id: 1,
       assigned_users: [3],
       created_at: new Date().toISOString()
@@ -301,7 +303,7 @@ const INITIAL_DATA = {
       description: 'Identificar y contactar tres oradores expertos en sostenibilidad',
       status: 'Pendiente',
       priority: 'Alta',
-      due_date: '2025-02-05',
+      due_date: '2025-11-05',
       project_id: 1,
       assigned_users: [4],
       created_at: new Date().toISOString()
@@ -312,7 +314,7 @@ const INITIAL_DATA = {
       description: 'Llegar a oradores invitados potenciales para el evento',
       status: 'Pendiente',
       priority: 'Media',
-      due_date: '2025-01-30',
+      due_date: '2025-11-30',
       project_id: 1,
       assigned_users: [3],
       created_at: new Date().toISOString()
@@ -323,7 +325,7 @@ const INITIAL_DATA = {
       description: 'Desarrollar la estrategia detallada para las sesiones de trabajo del evento',
       status: 'Pendiente',
       priority: 'Media',
-      due_date: '2025-02-10',
+      due_date: '2025-12-10',
       project_id: 1,
       assigned_users: [4],
       created_at: new Date().toISOString()
@@ -334,7 +336,7 @@ const INITIAL_DATA = {
       description: 'Confirmar la participación de todos los oradores del panel principal',
       status: 'Pendiente',
       priority: 'Alta',
-      due_date: '2025-02-15',
+      due_date: '2025-12-15',
       project_id: 1,
       assigned_users: [3],
       created_at: new Date().toISOString()
@@ -412,7 +414,7 @@ const INITIAL_DATA = {
       description: 'Realizar medición y análisis de las emisiones de carbono del proyecto',
       status: 'En progreso',
       priority: 'Alta',
-      due_date: '2025-03-20',
+      due_date: '2025-10-20',
       project_id: 2,
       assigned_users: [3, 4],
       created_at: new Date().toISOString()
@@ -423,7 +425,7 @@ const INITIAL_DATA = {
       description: 'Colocar sensores de monitoreo ambiental en las ubicaciones designadas',
       status: 'Pendiente',
       priority: 'Media',
-      due_date: '2025-03-25',
+      due_date: '2025-11-25',
       project_id: 2,
       assigned_users: [3],
       created_at: new Date().toISOString()
@@ -434,7 +436,7 @@ const INITIAL_DATA = {
       description: 'Crear diseño arquitectónico para la implementación del muro verde',
       status: 'En progreso',
       priority: 'Alta',
-      due_date: '2025-04-01',
+      due_date: '2025-12-01',
       project_id: 2,
       assigned_users: [3],
       created_at: new Date().toISOString()
@@ -445,7 +447,7 @@ const INITIAL_DATA = {
       description: 'Investigar y seleccionar especies de plantas adecuadas para el clima local',
       status: 'Pendiente',
       priority: 'Media',
-      due_date: '2025-04-05',
+      due_date: '2026-01-05',
       project_id: 2,
       assigned_users: [4],
       created_at: new Date().toISOString()
@@ -456,7 +458,7 @@ const INITIAL_DATA = {
       description: 'Estudiar patrones de consumo de agua en la región',
       status: 'Pendiente',
       priority: 'Crítica',
-      due_date: '2025-02-25',
+      due_date: '2025-11-25',
       project_id: 3,
       assigned_users: [3, 4],
       created_at: new Date().toISOString()
@@ -467,7 +469,7 @@ const INITIAL_DATA = {
       description: 'Crear documentación técnica completa del sistema',
       status: 'Completada',
       priority: 'Media',
-      due_date: '2025-03-01',
+      due_date: '2026-01-01',
       project_id: 3,
       assigned_users: [4],
       created_at: new Date().toISOString()
@@ -655,7 +657,7 @@ class DataService {
     return users.filter(user => participantIds.includes(user.id));
   }
 
-  addUserToProject(projectId, userId) {
+  addUserToProject(projectId, userId, assignedBy = null) {
     const projectUsers = this.getAll('project_users');
     const exists = projectUsers.some(pu => 
       pu.project_id === parseInt(projectId) && pu.user_id === parseInt(userId)
@@ -670,6 +672,25 @@ class DataService {
       };
       projectUsers.push(newAssignment);
       this.saveAll('project_users', projectUsers);
+      
+      // Crear notificación para el usuario asignado
+      const project = this.getById('projects', projectId);
+      const assignedUser = this.getById('users', userId);
+      const assignerUser = assignedBy ? this.getById('users', assignedBy) : null;
+      
+      if (project && assignedUser) {
+        notificationService.create({
+          type: 'project_assigned',
+          title: 'Nuevo proyecto asignado',
+          message: `Has sido agregado al proyecto "${project.name}"${assignerUser ? ` por ${assignerUser.name}` : ''}`,
+          project_id: projectId,
+          project_name: project.name,
+          user_id: userId,
+          priority: 'normal',
+          sender_name: assignerUser ? assignerUser.name : 'Sistema'
+        });
+      }
+      
       return newAssignment;
     }
     return null;
@@ -705,7 +726,7 @@ class DataService {
     return tasks.filter(task => assignedTaskIds.includes(task.id));
   }
 
-  assignTaskToUser(taskId, userId) {
+  assignTaskToUser(taskId, userId, assignedBy = null) {
     const assignments = this.getAll('task_assignments');
     const exists = assignments.some(assignment => 
       assignment.task_id === parseInt(taskId) && assignment.user_id === parseInt(userId)
@@ -720,6 +741,28 @@ class DataService {
       };
       assignments.push(newAssignment);
       this.saveAll('task_assignments', assignments);
+      
+      // Crear notificación para el usuario asignado
+      const task = this.getById('tasks', taskId);
+      const assignedUser = this.getById('users', userId);
+      const assignerUser = assignedBy ? this.getById('users', assignedBy) : null;
+      const project = task ? this.getById('projects', task.project_id) : null;
+      
+      if (task && assignedUser) {
+        notificationService.create({
+          type: 'task_assigned',
+          title: 'Nueva tarea asignada',
+          message: `Se te ha asignado la tarea "${task.title}"${project ? ` en el proyecto "${project.name}"` : ''}${assignerUser ? ` por ${assignerUser.name}` : ''}`,
+          project_id: task.project_id,
+          project_name: project ? project.name : 'Proyecto desconocido',
+          task_id: taskId,
+          task_title: task.title,
+          user_id: userId,
+          priority: task.priority === 'high' ? 'high' : 'normal',
+          sender_name: assignerUser ? assignerUser.name : 'Sistema'
+        });
+      }
+      
       return newAssignment;
     }
     return null;
@@ -870,6 +913,101 @@ class DataService {
     const attachments = this.getAll('attachments');
     const filteredAttachments = attachments.filter(attachment => attachment.id !== parseInt(attachmentId));
     this.saveAll('attachments', filteredAttachments);
+    return true;
+  }
+
+  // Métodos específicos para proyectos
+  createProject(projectData, createdBy = null) {
+    const projects = this.getAll('projects');
+    const newProject = {
+      id: Date.now(),
+      ...projectData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    projects.push(newProject);
+    this.saveAll('projects', projects);
+    
+    // Crear notificaciones para usuarios asignados al proyecto
+    if (newProject.assigned_users && newProject.assigned_users.length > 0) {
+      const creator = createdBy ? this.getById('users', createdBy) : null;
+      
+      newProject.assigned_users.forEach(userId => {
+        notificationService.create({
+          type: 'project_assigned',
+          title: 'Nuevo proyecto asignado',
+          message: `Has sido agregado al nuevo proyecto "${newProject.name}"${creator ? ` por ${creator.name}` : ''}`,
+          project_id: newProject.id,
+          project_name: newProject.name,
+          user_id: userId,
+          priority: 'normal',
+          sender_name: creator ? creator.name : 'Sistema'
+        });
+      });
+    }
+    
+    return newProject;
+  }
+
+  // Métodos específicos para tareas
+  createTask(taskData, createdBy = null) {
+    const tasks = this.getAll('tasks');
+    const newTask = {
+      id: Date.now(),
+      ...taskData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    tasks.push(newTask);
+    this.saveAll('tasks', tasks);
+    
+    // Si la tarea tiene un usuario asignado, crear notificación
+    if (newTask.assigned_to) {
+      const creator = createdBy ? this.getById('users', createdBy) : null;
+      const project = this.getById('projects', newTask.project_id);
+      
+      notificationService.create({
+        type: 'task_assigned',
+        title: 'Nueva tarea asignada',
+        message: `Se te ha asignado la tarea "${newTask.title}"${project ? ` en el proyecto "${project.name}"` : ''}${creator ? ` por ${creator.name}` : ''}`,
+        project_id: newTask.project_id,
+        project_name: project ? project.name : 'Proyecto desconocido',
+        task_id: newTask.id,
+        task_title: newTask.title,
+        user_id: newTask.assigned_to,
+        priority: newTask.priority === 'high' ? 'high' : 'normal',
+        sender_name: creator ? creator.name : 'Sistema'
+      });
+    }
+    
+    return newTask;
+  }
+
+  // Métodos específicos para archivos de proyecto
+  getProjectFiles(projectId) {
+    const files = this.getAll('project_files') || [];
+    return files.filter(file => file.project_id === parseInt(projectId));
+  }
+
+  createProjectFile(projectId, fileData) {
+    const files = this.getAll('project_files') || [];
+    const newFile = {
+      id: Date.now(),
+      project_id: parseInt(projectId),
+      ...fileData,
+      created_at: new Date().toISOString()
+    };
+    files.push(newFile);
+    this.saveAll('project_files', files);
+    return newFile;
+  }
+
+  deleteProjectFile(fileId) {
+    const files = this.getAll('project_files') || [];
+    const filteredFiles = files.filter(file => file.id !== parseInt(fileId));
+    this.saveAll('project_files', filteredFiles);
     return true;
   }
 }
