@@ -21,6 +21,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import ChevronLeft from '@mui/icons-material/ChevronLeft';
+import ChevronRight from '@mui/icons-material/ChevronRight';
 import dataService from '../../utils/dataService';
 import { useAuth } from '../../context/auth/AuthContext';
 
@@ -33,6 +35,8 @@ const ParticipantProjects = ({ onNavigate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [maxSlides, setMaxSlides] = useState(0);
 
   const statusOptions = ['Planificación', 'En progreso', 'Pausado', 'Completado', 'Cancelado'];
 
@@ -45,6 +49,38 @@ const ParticipantProjects = ({ onNavigate }) => {
   useEffect(() => {
     filterProjects();
   }, [projects, searchTerm, statusFilter]);
+
+  // Calcular el número máximo de slides para proyectos
+  useEffect(() => {
+    if (filteredProjects.length > 0) {
+      const totalSlides = Math.max(0, filteredProjects.length - 3);
+      setMaxSlides(totalSlides);
+      if (currentSlide > totalSlides) {
+        setCurrentSlide(0);
+      }
+    } else {
+      setMaxSlides(0);
+      setCurrentSlide(0);
+    }
+  }, [filteredProjects]);
+
+  // Navegación con teclado
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (filteredProjects.length <= 3) return;
+      
+      if (event.key === 'ArrowLeft' && currentSlide > 0) {
+        event.preventDefault();
+        setCurrentSlide(currentSlide - 1);
+      } else if (event.key === 'ArrowRight' && currentSlide < maxSlides) {
+        event.preventDefault();
+        setCurrentSlide(currentSlide + 1);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [currentSlide, maxSlides, filteredProjects.length]);
 
   const loadParticipantProjects = () => {
     try {
@@ -205,15 +241,93 @@ const ParticipantProjects = ({ onNavigate }) => {
       </Card>
 
       {/* Projects Grid */}
-      <Grid container spacing={3}>
-        {filteredProjects.map((project) => {
-          const myTaskProgress = getMyTaskProgress(project.id);
-          const participants = getProjectParticipants(project.id);
-          const daysRemaining = getDaysRemaining(project.end_date);
-          const taskCounts = getTaskStatusCounts(project.id);
+      {filteredProjects.length > 3 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
+              disabled={currentSlide === 0}
+              aria-label={`Ir al slide anterior. Slide ${currentSlide} de ${maxSlides + 1}`}
+              sx={{
+                color: GREEN,
+                '&:disabled': { color: '#ccc' },
+                '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' },
+                '&:focus': { 
+                  outline: '2px solid #2AAC26',
+                  outlineOffset: '2px'
+                }
+              }}
+            >
+              <ChevronLeft />
+            </IconButton>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#666', 
+                fontFamily: 'Poppins, sans-serif',
+                minWidth: '80px',
+                textAlign: 'center'
+              }}
+              aria-live="polite"
+              aria-label={`Slide ${currentSlide + 1} de ${maxSlides + 1}`}
+            >
+              {currentSlide + 1} de {maxSlides + 1}
+            </Typography>
+            <IconButton
+              onClick={() => setCurrentSlide(Math.min(maxSlides, currentSlide + 1))}
+              disabled={currentSlide >= maxSlides}
+              aria-label={`Ir al slide siguiente. Slide ${currentSlide} de ${maxSlides + 1}`}
+              sx={{
+                color: GREEN,
+                '&:disabled': { color: '#ccc' },
+                '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' },
+                '&:focus': { 
+                  outline: '2px solid #2AAC26',
+                  outlineOffset: '2px'
+                }
+              }}
+            >
+              <ChevronRight />
+            </IconButton>
+          </Box>
+        </Box>
+      )}
+      
+      <Box 
+        sx={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 3
+        }}
+        role="region"
+        aria-label="Carrusel de proyectos en los que participas"
+        aria-live="polite"
+      >
+        <Box 
+          sx={{
+            display: 'flex',
+            transform: filteredProjects.length > 3 ? `translateX(-${currentSlide * (100 / 3)}%)` : 'none',
+            transition: 'transform 0.3s ease-in-out',
+            gap: 1.5
+          }}
+          role="group"
+          aria-label={filteredProjects.length > 3 ? `Proyectos ${currentSlide * 3 + 1} a ${Math.min((currentSlide + 1) * 3, filteredProjects.length)} de ${filteredProjects.length}` : `Todos los ${filteredProjects.length} proyectos`}
+        >
+          {filteredProjects.map((project) => {
+            const myTaskProgress = getMyTaskProgress(project.id);
+            const participants = getProjectParticipants(project.id);
+            const daysRemaining = getDaysRemaining(project.end_date);
+            const taskCounts = getTaskStatusCounts(project.id);
 
-          return (
-            <Grid item size={{ xs: 12, md: 6, lg: 4 }} key={project.id}>
+            return (
+              <Box
+                key={project.id}
+                sx={{
+                  minWidth: filteredProjects.length > 3 ? 'calc(33.333% - 6px)' : 'auto',
+                  flex: filteredProjects.length > 3 ? '0 0 calc(33.333% - 6px)' : '1',
+                  maxWidth: filteredProjects.length > 3 ? 'calc(33.333% - 6px)' : 'none'
+                }}
+              >
               <Card 
                 sx={{ 
                   borderRadius: 3, 
@@ -222,8 +336,15 @@ const ParticipantProjects = ({ onNavigate }) => {
                   '&:hover': {
                     transform: 'translateY(-2px)',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
+                  },
+                  '&:focus-within': {
+                    outline: '2px solid #2AAC26',
+                    outlineOffset: '2px'
                   }
                 }}
+                role="article"
+                aria-label={`Proyecto: ${project.name}`}
+                tabIndex={0}
               >
                 <CardContent>
                   {/* Header */}
@@ -244,11 +365,15 @@ const ParticipantProjects = ({ onNavigate }) => {
                       <IconButton
                         size="small"
                         onClick={() => onNavigate('project-detail', project)}
+                        aria-label={`Ver detalles del proyecto ${project.name}`}
                         sx={{ 
                           color: '#2196f3',
-                          p: 0.5
+                          p: 0.5,
+                          '&:focus': { 
+                            outline: '2px solid #2AAC26',
+                            outlineOffset: '2px'
+                          }
                         }}
-                        title="Ver detalles del proyecto"
                       >
                         <VisibilityIcon sx={{ fontSize: 18 }} />
                       </IconButton>
@@ -406,10 +531,11 @@ const ParticipantProjects = ({ onNavigate }) => {
                   </Box>
                 </CardContent>
               </Card>
-            </Grid>
+              </Box>
           );
         })}
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Empty states */}
       {filteredProjects.length === 0 && projects.length > 0 && (

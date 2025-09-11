@@ -27,12 +27,13 @@ import PendingIcon from '@mui/icons-material/Pending';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dataService from '../../utils/dataService';
+import activityService from '../../utils/activityService';
 import { useAuth } from '../../context/auth/AuthContext';
 import DashboardWidgets from '../../components/dashboard/DashboardWidgets';
 
 const GREEN = '#2AAC26';
 
-const ParticipantDashboard = () => {
+const ParticipantDashboard = ({ onNavigate }) => {
   const { user } = useAuth();
   const [myTasks, setMyTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
@@ -44,51 +45,60 @@ const ParticipantDashboard = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(true);
 
-  const taskStatuses = ['Pendiente', 'En progreso', 'Completada'];
-
   useEffect(() => {
-    if (user) {
-      loadUserTasks();
-    }
+    loadUserTasks();
   }, [user]);
 
-  useEffect(() => {
-    filterTasks();
-  }, [myTasks, statusFilter]);
-
-  const loadUserTasks = () => {
+  const loadUserTasks = async () => {
     try {
-      // Obtener tareas asignadas al usuario
-      const userTasks = dataService.getTasksByUser(user.id);
-      setMyTasks(userTasks);
+      setLoading(true);
+      if (!user || !user.id) return;
 
+      const tasks = dataService.getTasksByUser(user.id);
+      setMyTasks(tasks);
+      setFilteredTasks(tasks);
+      
       // Calcular estadísticas
-      const totalTasks = userTasks.length;
-      const pendingTasks = userTasks.filter(t => t.status === 'Pendiente').length;
-      const inProgressTasks = userTasks.filter(t => t.status === 'En progreso').length;
-      const completedTasks = userTasks.filter(t => t.status === 'Completada').length;
-
-      // Tareas vencidas
-      const overdueTasks = userTasks.filter(task => {
-        if (!task.due_date) return false;
-        const dueDate = new Date(task.due_date);
-        const today = new Date();
-        return dueDate < today && task.status !== 'Completada';
-      }).length;
-
+      const totalTasks = tasks.length;
+      const pendingTasks = tasks.filter(t => t.status === 'Pendiente').length;
+      const inProgressTasks = tasks.filter(t => t.status === 'En progreso').length;
+      const completedTasks = tasks.filter(t => t.status === 'Completada').length;
+      
       setStats({
-        totalTasks,
-        pendingTasks,
-        inProgressTasks,
-        completedTasks,
-        overdueTasks
+        total: totalTasks,
+        pending: pendingTasks,
+        inProgress: inProgressTasks,
+        completed: completedTasks
       });
-
     } catch (error) {
-      showSnackbar('Error al cargar las tareas', 'error');
+      console.error('Error loading user tasks:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'En progreso': return '#4caf50';
+      case 'Completada': return '#2196f3';
+      case 'Pendiente': return '#ff9800';
+      case 'Pausada': return '#f44336';
+      default: return '#757575';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Completada': return <CheckCircleIcon />;
+      case 'En progreso': return <PlayArrowIcon />;
+      case 'Pendiente': return <PendingIcon />;
+      default: return <AssignmentIcon />;
+    }
+  };
+
+  const getProjectName = (projectId) => {
+    const project = dataService.getById('projects', projectId);
+    return project ? project.name : 'Proyecto Desconocido';
   };
 
   const filterTasks = () => {
@@ -99,97 +109,90 @@ const ParticipantDashboard = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Completada': return '#4caf50';
-      case 'En progreso': return '#2196f3';
-      case 'Pendiente': return '#ff9800';
-      default: return '#757575';
-    }
-  };
+  useEffect(() => {
+    filterTasks();
+  }, [statusFilter, myTasks]);
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Completada': return <CheckCircleIcon sx={{ color: '#4caf50' }} />;
-      case 'En progreso': return <PlayArrowIcon sx={{ color: '#2196f3' }} />;
-      case 'Pendiente': return <PendingIcon sx={{ color: '#ff9800' }} />;
-      default: return <AssignmentIcon sx={{ color: '#757575' }} />;
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'Crítica': return '#f44336';
-      case 'Alta': return '#ff9800';
-      case 'Media': return '#2196f3';
-      case 'Baja': return '#4caf50';
-      default: return '#757575';
-    }
-  };
-
-  const isTaskOverdue = (task) => {
-    if (!task.due_date) return false;
-    const dueDate = new Date(task.due_date);
-    const today = new Date();
-    return dueDate < today && task.status !== 'Completada';
-  };
-
-  const getDaysRemaining = (dueDate) => {
-    if (!dueDate) return null;
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const getProjectName = (projectId) => {
-    const project = dataService.getById('projects', projectId);
-    return project ? project.name : 'Proyecto Desconocido';
-  };
-
-  const handleOpenTaskDialog = (task) => {
+  const handleStatusChange = (task) => {
     setSelectedTask(task);
     setNewStatus(task.status);
     setOpenTaskDialog(true);
   };
 
-  const handleUpdateTaskStatus = () => {
-    try {
-      if (!selectedTask || !newStatus) {
-        showSnackbar('Error al actualizar la tarea', 'error');
-        return;
-      }
+  const handleUpdateStatus = () => {
+    if (!selectedTask || !newStatus) return;
 
+    try {
+      const oldStatus = selectedTask.status;
       dataService.update('tasks', selectedTask.id, { status: newStatus });
-      showSnackbar('Estado de la tarea actualizado exitosamente', 'success');
+      
+      // Registrar actividad de cambio de estado
+      if (user?.id) {
+        activityService.addActivity(
+          user.id,
+          activityService.ACTIVITY_TYPES.TASK_STATUS_CHANGED,
+          {
+            taskTitle: selectedTask.title,
+            taskId: selectedTask.id,
+            oldStatus: oldStatus,
+            newStatus: newStatus,
+            projectId: selectedTask.project_id
+          }
+        );
+      }
+      
       loadUserTasks();
       setOpenTaskDialog(false);
+      setSnackbar({
+        open: true,
+        message: 'Estado de tarea actualizado correctamente',
+        severity: 'success'
+      });
     } catch (error) {
-      showSnackbar('Error al actualizar la tarea', 'error');
+      setSnackbar({
+        open: true,
+        message: 'Error al actualizar el estado de la tarea',
+        severity: 'error'
+      });
     }
   };
 
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
+  const getDaysRemaining = (endDate) => {
+    if (!endDate) return null;
+    const today = new Date();
+    const end = new Date(endDate);
+    const diffTime = end - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const isOverdue = (endDate) => {
+    const days = getDaysRemaining(endDate);
+    return days !== null && days < 0;
+  };
+
+  const getOverdueTasks = () => {
+    return myTasks.filter(task => isOverdue(task.end_date));
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box sx={{ p: 3 }}>
         <Typography>Cargando...</Typography>
       </Box>
     );
   }
 
+  const overdueTasks = getOverdueTasks();
+
   return (
-    <Box sx={{ p: 3, fontFamily: 'Poppins, sans-serif' }}>
+    <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, fontFamily: 'Poppins, sans-serif' }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
           Bienvenido, {user?.name}
         </Typography>
-        <Typography variant="body1" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+        <Typography variant="h6" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
           Panel de Participante - Gestiona tus tareas asignadas
         </Typography>
       </Box>
@@ -198,289 +201,205 @@ const ParticipantDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: GREEN, fontFamily: 'Poppins, sans-serif' }}>
-                    {stats.totalTasks || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                    Total Tareas
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: `${GREEN}20`, color: GREEN }}>
-                  <AssignmentIcon />
-                </Avatar>
-              </Box>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <AssignmentIcon sx={{ fontSize: 40, color: GREEN, mb: 1 }} />
+              <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                {stats.total || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                Total Tareas
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#ff9800', fontFamily: 'Poppins, sans-serif' }}>
-                    {stats.pendingTasks || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                    Pendientes
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: '#fff3e0', color: '#ff9800' }}>
-                  <PendingIcon />
-                </Avatar>
-              </Box>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <PendingIcon sx={{ fontSize: 40, color: '#ff9800', mb: 1 }} />
+              <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                {stats.pending || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                Pendientes
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#2196f3', fontFamily: 'Poppins, sans-serif' }}>
-                    {stats.inProgressTasks || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                    En Progreso
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: '#e3f2fd', color: '#2196f3' }}>
-                  <PlayArrowIcon />
-                </Avatar>
-              </Box>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <PlayArrowIcon sx={{ fontSize: 40, color: '#4caf50', mb: 1 }} />
+              <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                {stats.inProgress || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                En Progreso
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#4caf50', fontFamily: 'Poppins, sans-serif' }}>
-                    {stats.completedTasks || 0}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                    Completadas
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: '#e8f5e9', color: '#4caf50' }}>
-                  <CheckCircleIcon />
-                </Avatar>
-              </Box>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <CheckCircleIcon sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
+              <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                {stats.completed || 0}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                Completadas
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Filters and Tasks */}
+      {/* Tasks Section */}
       <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
               Mis Tareas Asignadas
             </Typography>
-            <FormControl sx={{ minWidth: 200 }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Filtrar por estado</InputLabel>
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 label="Filtrar por estado"
-                size="small"
               >
                 <MenuItem value="">Todos</MenuItem>
-                {taskStatuses.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
-                  </MenuItem>
-                ))}
+                <MenuItem value="Pendiente">Pendientes</MenuItem>
+                <MenuItem value="En progreso">En Progreso</MenuItem>
+                <MenuItem value="Completada">Completadas</MenuItem>
+                <MenuItem value="Pausada">Pausadas</MenuItem>
               </Select>
             </FormControl>
           </Box>
 
-          {stats.overdueTasks > 0 && (
-            <Alert severity="warning" sx={{ mb: 3, fontFamily: 'Poppins, sans-serif' }}>
-              Tienes {stats.overdueTasks} tarea{stats.overdueTasks > 1 ? 's' : ''} vencida{stats.overdueTasks > 1 ? 's' : ''}
+          {/* Overdue Tasks Alert */}
+          {overdueTasks.length > 0 && (
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+              Tienes {overdueTasks.length} tareas vencidas
             </Alert>
           )}
 
-          <List>
-            {filteredTasks.map((task) => {
-              const isOverdue = isTaskOverdue(task);
-              const daysRemaining = getDaysRemaining(task.due_date);
-
-              return (
-                <ListItem 
-                  key={task.id}
-                  sx={{
-                    border: `1px solid ${isOverdue ? '#f44336' : '#e0e0e0'}`,
-                    borderRadius: 2,
-                    mb: 2,
-                    bgcolor: isOverdue ? '#ffebee' : 'white',
-                    '&:hover': { bgcolor: isOverdue ? '#ffcdd2' : '#f8f9fa' },
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => handleOpenTaskDialog(task)}
-                >
-                  <Box sx={{ mr: 2 }}>
-                    {getStatusIcon(task.status)}
-                  </Box>
-                  <ListItemText
-                    primary={
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <Typography 
-                          component="span"
-                          variant="subtitle1" 
-                          sx={{ 
-                            fontWeight: 600, 
-                            fontFamily: 'Poppins, sans-serif',
-                            color: isOverdue ? '#d32f2f' : 'inherit'
-                          }}
-                        >
-                          {task.title}
-                        </Typography>
-                        <Chip
-                          label={task.status}
-                          size="small"
-                          sx={{
-                            bgcolor: `${getStatusColor(task.status)}20`,
-                            color: getStatusColor(task.status),
-                            fontFamily: 'Poppins, sans-serif'
-                          }}
-                        />
-                        {task.priority && (
+          {/* Tasks List */}
+          {filteredTasks.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                No tienes tareas asignadas
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif', mt: 1 }}>
+                Contacta al coordinador para que te asigne tareas
+              </Typography>
+            </Box>
+          ) : (
+            <List>
+              {filteredTasks.map((task) => {
+                const daysRemaining = getDaysRemaining(task.end_date);
+                const overdue = isOverdue(task.end_date);
+                
+                return (
+                  <ListItem
+                    key={task.id}
+                    sx={{
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 2,
+                      mb: 2,
+                      bgcolor: overdue ? '#fff3e0' : 'white',
+                      '&:hover': { bgcolor: overdue ? '#ffe0b2' : '#f5f5f5' }
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Typography variant="h6" sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500 }}>
+                            {task.title}
+                          </Typography>
                           <Chip
-                            label={task.priority}
+                            label={task.status}
                             size="small"
                             sx={{
-                              bgcolor: `${getPriorityColor(task.priority)}20`,
-                              color: getPriorityColor(task.priority),
+                              bgcolor: `${getStatusColor(task.status)}20`,
+                              color: getStatusColor(task.status),
                               fontFamily: 'Poppins, sans-serif'
                             }}
                           />
-                        )}
-                        {isOverdue && (
                           <Chip
-                            label="VENCIDA"
+                            label={task.priority}
                             size="small"
-                            sx={{
-                              bgcolor: '#f4433620',
-                              color: '#f44336',
-                              fontFamily: 'Poppins, sans-serif',
-                              fontWeight: 600
-                            }}
+                            variant="outlined"
+                            sx={{ fontFamily: 'Poppins, sans-serif' }}
                           />
-                        )}
-                      </span>
-                    }
-                    secondary={
-                      <span>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: '#666', 
-                            fontFamily: 'Poppins, sans-serif',
-                            mb: 1
-                          }}
-                        >
-                          {task.description}
-                        </Typography>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                          <Typography 
-                            component="span"
-                            variant="caption" 
-                            sx={{ 
-                              color: '#999', 
-                              fontFamily: 'Poppins, sans-serif',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 0.5
-                            }}
-                          >
-                            <strong>Proyecto:</strong> {getProjectName(task.project_id)}
-                          </Typography>
-                          {task.due_date && (
-                            <Typography 
-                              component="span"
-                              variant="caption" 
-                              sx={{ 
-                                color: isOverdue ? '#d32f2f' : '#999', 
+                          {overdue && (
+                            <Chip
+                              label="VENCIDA"
+                              size="small"
+                              sx={{
+                                bgcolor: '#f44336',
+                                color: 'white',
                                 fontFamily: 'Poppins, sans-serif',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5
+                                fontWeight: 'bold'
                               }}
-                            >
-                              <CalendarTodayIcon sx={{ fontSize: 12 }} />
-                              {isOverdue 
-                                ? `Vencida hace ${Math.abs(daysRemaining)} días`
-                                : daysRemaining === 0 
-                                  ? 'Vence hoy'
-                                  : daysRemaining > 0 
-                                    ? `${daysRemaining} días restantes`
-                                    : 'Sin fecha límite'
-                              }
-                            </Typography>
+                            />
                           )}
-                        </span>
-                      </span>
-                    }
-                  />
-                  <ListItemSecondaryAction>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenTaskDialog(task);
-                      }}
-                      sx={{
-                        borderColor: GREEN,
-                        color: GREEN,
-                        textTransform: 'none',
-                        fontFamily: 'Poppins, sans-serif',
-                        '&:hover': { borderColor: '#1f9a1f', bgcolor: '#e8f5e9' }
-                      }}
-                    >
-                      Actualizar Estado
-                    </Button>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              );
-            })}
-          </List>
-
-          {filteredTasks.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <AssignmentIcon sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
-              <Typography variant="h6" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
-                {statusFilter ? `No tienes tareas ${statusFilter.toLowerCase()}` : 'No tienes tareas asignadas'}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif', mt: 1 }}>
-                {statusFilter ? 'Intenta cambiar el filtro' : 'Las tareas aparecerán aquí cuando sean asignadas por el coordinador'}
-              </Typography>
-            </Box>
+                        </Box>
+                      }
+                      secondary={
+                        <Box>
+                          <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif', mb: 1 }}>
+                            {task.description}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Typography variant="caption" sx={{ color: '#999', fontFamily: 'Poppins, sans-serif' }}>
+                              Proyecto: {getProjectName(task.project_id)}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <CalendarTodayIcon sx={{ fontSize: 14, color: '#666' }} />
+                              <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                                {daysRemaining === null ? 'Sin fecha límite' : 
+                                 daysRemaining > 0 ? `${daysRemaining} días restantes` :
+                                 daysRemaining === 0 ? 'Termina hoy' :
+                                 `Vencida hace ${Math.abs(daysRemaining)} días`}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      }
+                    />
+                    <ListItemSecondaryAction>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => handleStatusChange(task)}
+                        sx={{
+                          bgcolor: GREEN,
+                          textTransform: 'none',
+                          fontFamily: 'Poppins, sans-serif',
+                          '&:hover': { bgcolor: '#1f9a1f' }
+                        }}
+                      >
+                        Actualizar Estado
+                      </Button>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                );
+              })}
+            </List>
           )}
         </CardContent>
       </Card>
 
       {/* Task Status Update Dialog */}
       <Dialog open={openTaskDialog} onClose={() => setOpenTaskDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600 }}>
+        <DialogTitle sx={{ fontFamily: 'Poppins, sans-serif' }}>
           Actualizar Estado de Tarea
         </DialogTitle>
         <DialogContent>
           {selectedTask && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Poppins, sans-serif' }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontFamily: 'Poppins, sans-serif', mb: 2 }}>
                 {selectedTask.title}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#666', mb: 3, fontFamily: 'Poppins, sans-serif' }}>
-                {selectedTask.description}
               </Typography>
               <FormControl fullWidth>
                 <InputLabel>Nuevo Estado</InputLabel>
@@ -489,32 +408,24 @@ const ParticipantDashboard = () => {
                   onChange={(e) => setNewStatus(e.target.value)}
                   label="Nuevo Estado"
                 >
-                  {taskStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="Pendiente">Pendiente</MenuItem>
+                  <MenuItem value="En progreso">En Progreso</MenuItem>
+                  <MenuItem value="Completada">Completada</MenuItem>
+                  <MenuItem value="Pausada">Pausada</MenuItem>
                 </Select>
               </FormControl>
-              <Alert severity="info" sx={{ mt: 2, fontFamily: 'Poppins, sans-serif' }}>
-                Solo puedes actualizar el estado de la tarea. Para otros cambios, contacta al coordinador del proyecto.
-              </Alert>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={() => setOpenTaskDialog(false)}
-            sx={{ fontFamily: 'Poppins, sans-serif' }}
-          >
+          <Button onClick={() => setOpenTaskDialog(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleUpdateTaskStatus} 
-            variant="contained" 
-            sx={{ 
+          <Button
+            onClick={handleUpdateStatus}
+            variant="contained"
+            sx={{
               bgcolor: GREEN,
-              fontFamily: 'Poppins, sans-serif',
               '&:hover': { bgcolor: '#1f9a1f' }
             }}
           >
@@ -523,28 +434,20 @@ const ParticipantDashboard = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          sx={{ fontFamily: 'Poppins, sans-serif' }}
+          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
-      
-      {/* Widgets Section */}
-      <Box sx={{ mt: 6 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, fontFamily: 'Poppins, sans-serif' }}>
-          Mi Rendimiento
-        </Typography>
-        <DashboardWidgets customizable={true} />
-      </Box>
     </Box>
   );
 };

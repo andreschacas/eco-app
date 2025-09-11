@@ -6,6 +6,10 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
@@ -19,9 +23,15 @@ import { useAuth } from '../context/auth/AuthContext';
 const GREEN = '#2AAC26';
 
 const Auth = () => {
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('participante');
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,16 +43,50 @@ const Auth = () => {
     setLoading(true);
     setError('');
     
-    try {
-      const result = await login(email, password);
-      if (!result.success) {
-        setError(result.error);
+    if (isRegisterMode) {
+      // Validaciones para registro
+      if (password !== confirmPassword) {
+        setError('Las contraseñas no coinciden');
+        setLoading(false);
+        return;
       }
-      // Si es exitoso, el usuario será redirigido automáticamente
-    } catch (err) {
-      setError('Error inesperado al iniciar sesión');
-    } finally {
-      setLoading(false);
+      if (password.length < 6) {
+        setError('La contraseña debe tener al menos 6 caracteres');
+        setLoading(false);
+        return;
+      }
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Nombre y apellido son requeridos');
+        setLoading(false);
+        return;
+      }
+      
+      // Aquí iría la lógica de registro
+      try {
+        // Simular registro exitoso
+        setTimeout(() => {
+          setError('');
+          setIsRegisterMode(false);
+          setLoading(false);
+          // Mostrar mensaje de éxito o redirigir
+        }, 2000);
+      } catch (err) {
+        setError('Error al crear la cuenta');
+        setLoading(false);
+      }
+    } else {
+      // Lógica de login existente
+      try {
+        const result = await login(email, password);
+        if (!result.success) {
+          setError(result.error);
+        }
+        // Si es exitoso, el usuario será redirigido automáticamente
+      } catch (err) {
+        setError('Error inesperado al iniciar sesión');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -74,7 +118,7 @@ const Auth = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <img src={logo} alt="Logo" style={{ width: 32, height: 32, marginRight: 10 }} />
             <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: 22, letterSpacing: 0.5 }}>
-              <span style={{ fontWeight: 700, color: '#2AAC26' }}>Green</span>
+              <span style={{ fontWeight: 700, color: '#121212' }}>Green</span>
               <span style={{ fontWeight: 700, color: '#121212' }}>Tech</span>
             </span>
           </Box>
@@ -83,39 +127,45 @@ const Auth = () => {
               <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                 <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke={GREEN} strokeWidth="2"/><path d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" stroke={GREEN} strokeWidth="2"/></svg>
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, fontFamily: 'Poppins, sans-serif' }}>Inicia sesión</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, fontFamily: 'Poppins, sans-serif' }}>
+                {isRegisterMode ? 'Crear cuenta' : 'Inicia sesión'}
+              </Typography>
               <Typography variant="body2" sx={{ color: '#888', mb: 2, fontFamily: 'Poppins, sans-serif' }}>
-                Ingresa tus datos para ingresar.
+                {isRegisterMode ? 'Completa los datos para registrarte.' : 'Ingresa tus datos para ingresar.'}
               </Typography>
             </Box>
-            <Button 
-              fullWidth 
-              variant="outlined" 
-              sx={{ mb: 1, textTransform: 'none', borderColor: '#e0e0e0', color: '#222', fontWeight: 600, fontFamily: 'Poppins, sans-serif', '&:hover': { borderColor: GREEN, bgcolor: '#e8f5e9' } }} 
-              onClick={() => handleDemoLogin('admin@eco.com', 'admin123')}
-              disabled={loading}
-            >
-              Demo Administrador
-            </Button>
-            <Button 
-              fullWidth 
-              variant="outlined" 
-              sx={{ mb: 1, textTransform: 'none', borderColor: '#e0e0e0', color: '#222', fontWeight: 600, fontFamily: 'Poppins, sans-serif', '&:hover': { borderColor: GREEN, bgcolor: '#e8f5e9' } }} 
-              onClick={() => handleDemoLogin('coordinator@eco.com', 'coord123')}
-              disabled={loading}
-            >
-              Demo Coordinador
-            </Button>
-            <Button 
-              fullWidth 
-              variant="outlined" 
-              sx={{ mb: 2, textTransform: 'none', borderColor: '#e0e0e0', color: '#222', fontWeight: 600, fontFamily: 'Poppins, sans-serif', '&:hover': { borderColor: GREEN, bgcolor: '#e8f5e9' } }} 
-              onClick={() => handleDemoLogin('participant@eco.com', 'part123')}
-              disabled={loading}
-            >
-              Demo Participante
-            </Button>
-            <Divider sx={{ my: 2, color: '#e0e0e0' }}>o</Divider>
+            {!isRegisterMode && (
+              <>
+                <Button 
+                  fullWidth 
+                  variant="outlined" 
+                  sx={{ mb: 1, textTransform: 'none', borderColor: '#e0e0e0', color: '#222', fontWeight: 600, fontFamily: 'Poppins, sans-serif', '&:hover': { borderColor: GREEN, bgcolor: '#e8f5e9' } }} 
+                  onClick={() => handleDemoLogin('admin@eco.com', 'admin123')}
+                  disabled={loading}
+                >
+                  Demo Administrador
+                </Button>
+                <Button 
+                  fullWidth 
+                  variant="outlined" 
+                  sx={{ mb: 1, textTransform: 'none', borderColor: '#e0e0e0', color: '#222', fontWeight: 600, fontFamily: 'Poppins, sans-serif', '&:hover': { borderColor: GREEN, bgcolor: '#e8f5e9' } }} 
+                  onClick={() => handleDemoLogin('coordinator@eco.com', 'coord123')}
+                  disabled={loading}
+                >
+                  Demo Coordinador
+                </Button>
+                <Button 
+                  fullWidth 
+                  variant="outlined" 
+                  sx={{ mb: 2, textTransform: 'none', borderColor: '#e0e0e0', color: '#222', fontWeight: 600, fontFamily: 'Poppins, sans-serif', '&:hover': { borderColor: GREEN, bgcolor: '#e8f5e9' } }} 
+                  onClick={() => handleDemoLogin('participant@eco.com', 'part123')}
+                  disabled={loading}
+                >
+                  Demo Participante
+                </Button>
+                <Divider sx={{ my: 2, color: '#e0e0e0' }}>o</Divider>
+              </>
+            )}
             
             {error && (
               <Alert severity="error" sx={{ mb: 2, fontFamily: 'Poppins, sans-serif' }}>
@@ -124,6 +174,49 @@ const Auth = () => {
             )}
             
             <form onSubmit={handleSubmit}>
+              {isRegisterMode && (
+                <>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Nombre"
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontFamily: 'Poppins, sans-serif' }}
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                      disabled={loading}
+                      required
+                      InputProps={{ style: { fontFamily: 'Poppins, sans-serif' } }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Apellido"
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontFamily: 'Poppins, sans-serif' }}
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
+                      disabled={loading}
+                      required
+                      InputProps={{ style: { fontFamily: 'Poppins, sans-serif' } }}
+                    />
+                  </Box>
+                  <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                    <InputLabel>Rol</InputLabel>
+                    <Select
+                      value={role}
+                      onChange={e => setRole(e.target.value)}
+                      label="Rol"
+                      sx={{ fontFamily: 'Poppins, sans-serif' }}
+                    >
+                      <MenuItem value="participante">Participante</MenuItem>
+                      <MenuItem value="coordinador">Coordinador</MenuItem>
+                      <MenuItem value="administrador">Administrador</MenuItem>
+                    </Select>
+                  </FormControl>
+                </>
+              )}
               <TextField
                 fullWidth
                 label="Correo electrónico"
@@ -142,7 +235,7 @@ const Auth = () => {
                 variant="outlined"
                 size="small"
                 type={showPassword ? 'text' : 'password'}
-                sx={{ mb: 1, fontFamily: 'Poppins, sans-serif' }}
+                sx={{ mb: isRegisterMode ? 2 : 1, fontFamily: 'Poppins, sans-serif' }}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 disabled={loading}
@@ -163,15 +256,46 @@ const Auth = () => {
                   style: { fontFamily: 'Poppins, sans-serif' }
                 }}
               />
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <FormControlLabel
-                control={<Checkbox checked={remember} onChange={e => setRemember(e.target.checked)} sx={{ color: GREEN }} />}
-                label={<span style={{ fontFamily: 'Poppins, sans-serif', fontSize: 14 }}>Recordar</span>}
-              />
-              <Button variant="text" sx={{ color: '#888', fontSize: 14, textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}>
-                ¿Olvidaste tu contraseña?
-              </Button>
-            </Box>
+              {isRegisterMode && (
+                <TextField
+                  fullWidth
+                  label="Confirmar contraseña"
+                  variant="outlined"
+                  size="small"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  sx={{ mb: 1, fontFamily: 'Poppins, sans-serif' }}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton 
+                          onClick={() => setShowConfirmPassword(v => !v)} 
+                          edge="end" 
+                          size="small"
+                          disabled={loading}
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                    style: { fontFamily: 'Poppins, sans-serif' }
+                  }}
+                />
+              )}
+            {!isRegisterMode && (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <FormControlLabel
+                  control={<Checkbox checked={remember} onChange={e => setRemember(e.target.checked)} sx={{ color: GREEN }} />}
+                  label={<span style={{ fontFamily: 'Poppins, sans-serif', fontSize: 14 }}>Recordar</span>}
+                />
+                <Button variant="text" sx={{ color: '#888', fontSize: 14, textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}>
+                  ¿Olvidaste tu contraseña?
+                </Button>
+              </Box>
+            )}
               <Button 
                 fullWidth 
                 type="submit"
@@ -185,13 +309,84 @@ const Auth = () => {
                   borderRadius: 2, 
                   boxShadow: 'none', 
                   height: 40, 
+                  mb: isRegisterMode ? 1 : 0,
                   ':hover': { bgcolor: '#1f9a1f' },
                   ':disabled': { bgcolor: '#ccc' }
                 }} 
                 disabled={loading}
               >
-                {loading ? <CircularProgress size={20} color="inherit" /> : 'Ingresar'}
+                {loading ? <CircularProgress size={20} color="inherit" /> : (isRegisterMode ? 'Crear cuenta' : 'Ingresar')}
               </Button>
+              
+               {!isRegisterMode && (
+                 <Box sx={{ textAlign: 'center', mt: 2 }}>
+                   <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                     ¿No tienes cuenta?{' '}
+                     <Button 
+                       variant="text" 
+                       onClick={() => {
+                         setIsRegisterMode(true);
+                         setError('');
+                         // Limpiar campos
+                         setEmail('');
+                         setPassword('');
+                         setFirstName('');
+                         setLastName('');
+                         setConfirmPassword('');
+                         setRole('participante');
+                       }}
+                       sx={{ 
+                         color: GREEN, 
+                         fontWeight: 600, 
+                         fontFamily: 'Poppins, sans-serif', 
+                         textTransform: 'none', 
+                         p: 0,
+                         minWidth: 'auto',
+                         fontSize: '0.875rem',
+                         ':hover': { bgcolor: 'transparent', textDecoration: 'underline' }
+                       }} 
+                       disabled={loading}
+                     >
+                       Regístrate
+                     </Button>
+                   </Typography>
+                 </Box>
+               )}
+              
+               {isRegisterMode && (
+                 <Box sx={{ textAlign: 'center', mt: 2 }}>
+                   <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                     ¿Ya tienes cuenta?{' '}
+                     <Button 
+                       variant="text" 
+                       onClick={() => {
+                         setIsRegisterMode(false);
+                         setError('');
+                         // Limpiar campos
+                         setEmail('');
+                         setPassword('');
+                         setFirstName('');
+                         setLastName('');
+                         setConfirmPassword('');
+                         setRole('participante');
+                       }}
+                       sx={{ 
+                         color: GREEN, 
+                         fontWeight: 600, 
+                         fontFamily: 'Poppins, sans-serif', 
+                         textTransform: 'none', 
+                         p: 0,
+                         minWidth: 'auto',
+                         fontSize: '0.875rem',
+                         ':hover': { bgcolor: 'transparent', textDecoration: 'underline' }
+                       }} 
+                       disabled={loading}
+                     >
+                       Iniciar sesión
+                     </Button>
+                   </Typography>
+                 </Box>
+               )}
             </form>
           </Paper>
         </Box>
@@ -222,7 +417,7 @@ const Auth = () => {
       }}>
         <Box sx={{ position: 'relative', zIndex: 2, textAlign: 'center', color: '#fff', px: 4 }}>
           <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins, sans-serif' }}>
-            Bienvenido a <span style={{ color: '#2AAC26' }}>Green</span><span style={{ color: '#fff' }}>Tech</span>
+            Bienvenido a <span style={{ color: '#fff' }}>Green</span><span style={{ color: '#fff' }}>Tech</span>
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
             Gestiona tus proyectos sostenibles de manera eficiente

@@ -53,6 +53,24 @@ const CoordinatorDashboard = ({ onNavigate }) => {
     }
   }, [myProjects]);
 
+  // Navegación con teclado
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (myProjects.length <= 3) return;
+      
+      if (event.key === 'ArrowLeft' && currentSlide > 0) {
+        event.preventDefault();
+        setCurrentSlide(currentSlide - 1);
+      } else if (event.key === 'ArrowRight' && currentSlide < maxSlides) {
+        event.preventDefault();
+        setCurrentSlide(currentSlide + 1);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [currentSlide, maxSlides, myProjects.length]);
+
   const loadDashboardData = () => {
     try {
     // Obtener proyectos del coordinador
@@ -234,26 +252,49 @@ const CoordinatorDashboard = ({ onNavigate }) => {
             Mis Proyectos
           </Typography>
           
-          {myProjects.length > 0 && (
+          {myProjects.length > 3 && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton
                 onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
                 disabled={currentSlide === 0}
+                aria-label={`Ir al slide anterior. Slide ${currentSlide} de ${maxSlides + 1}`}
                 sx={{
                   color: GREEN,
                   '&:disabled': { color: '#ccc' },
-                  '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' }
+                  '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' },
+                  '&:focus': { 
+                    outline: '2px solid #2AAC26',
+                    outlineOffset: '2px'
+                  }
                 }}
               >
                 <ChevronLeft />
               </IconButton>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: '#666', 
+                  fontFamily: 'Poppins, sans-serif',
+                  minWidth: '80px',
+                  textAlign: 'center'
+                }}
+                aria-live="polite"
+                aria-label={`Slide ${currentSlide + 1} de ${maxSlides + 1}`}
+              >
+                {currentSlide + 1} de {maxSlides + 1}
+              </Typography>
               <IconButton
                 onClick={() => setCurrentSlide(Math.min(maxSlides, currentSlide + 1))}
                 disabled={currentSlide >= maxSlides}
+                aria-label={`Ir al slide siguiente. Slide ${currentSlide} de ${maxSlides + 1}`}
                 sx={{
                   color: GREEN,
                   '&:disabled': { color: '#ccc' },
-                  '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' }
+                  '&:hover': { bgcolor: 'rgba(42, 172, 38, 0.1)' },
+                  '&:focus': { 
+                    outline: '2px solid #2AAC26',
+                    outlineOffset: '2px'
+                  }
                 }}
               >
                 <ChevronRight />
@@ -274,17 +315,26 @@ const CoordinatorDashboard = ({ onNavigate }) => {
             </CardContent>
           </Card>
         ) : (
-          <Box sx={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: 3
-          }}>
-            <Box sx={{
-              display: 'flex',
-              transform: `translateX(-${currentSlide * (100 / 3)}%)`,
-              transition: 'transform 0.3s ease-in-out',
-              gap: 1.5
-            }}>
+          <Box 
+            sx={{
+              position: 'relative',
+              overflow: 'hidden',
+              borderRadius: 3
+            }}
+            role="region"
+            aria-label="Carrusel de proyectos"
+            aria-live="polite"
+          >
+            <Box 
+              sx={{
+                display: 'flex',
+                transform: `translateX(-${currentSlide * (100 / 3)}%)`,
+                transition: 'transform 0.3s ease-in-out',
+                gap: 1.5
+              }}
+              role="group"
+              aria-label={`Proyectos ${currentSlide * 3 + 1} a ${Math.min((currentSlide + 1) * 3, myProjects.length)} de ${myProjects.length}`}
+            >
               {myProjects.map((project) => {
                 const progress = getProjectProgress(project);
                 const participants = getProjectParticipants(project.id);
@@ -307,8 +357,15 @@ const CoordinatorDashboard = ({ onNavigate }) => {
                       '&:hover': {
                         transform: 'translateY(-2px)',
                         boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
+                      },
+                      '&:focus-within': {
+                        outline: '2px solid #2AAC26',
+                        outlineOffset: '2px'
                       }
                     }}
+                    role="article"
+                    aria-label={`Proyecto: ${project.name}`}
+                    tabIndex={0}
                   >
                     <CardContent>
                       {/* Header */}
@@ -337,8 +394,15 @@ const CoordinatorDashboard = ({ onNavigate }) => {
                           </Box>
                           <IconButton
                             size="small"
-                          onClick={() => onNavigate('project-detail', project)}
-                            sx={{ color: GREEN }}
+                            onClick={() => onNavigate('project-detail', project)}
+                            aria-label={`Ver detalles del proyecto ${project.name}`}
+                            sx={{ 
+                              color: GREEN,
+                              '&:focus': { 
+                                outline: '2px solid #2AAC26',
+                                outlineOffset: '2px'
+                              }
+                            }}
                           >
                           <VisibilityIcon />
                           </IconButton>
@@ -400,12 +464,17 @@ const CoordinatorDashboard = ({ onNavigate }) => {
                           variant="outlined"
                           size="small"
                           onClick={() => onNavigate('project-detail', project)}
+                          aria-label={`Ver detalles completos del proyecto ${project.name}`}
                           sx={{
                             borderColor: GREEN,
                             color: GREEN,
                             textTransform: 'none',
                             fontFamily: 'Poppins, sans-serif',
-                            '&:hover': { borderColor: '#1f9a1f', bgcolor: '#e8f5e9' }
+                            '&:hover': { borderColor: '#1f9a1f', bgcolor: '#e8f5e9' },
+                            '&:focus': { 
+                              outline: '2px solid #2AAC26',
+                              outlineOffset: '2px'
+                            }
                           }}
                         >
                           Ver Proyecto

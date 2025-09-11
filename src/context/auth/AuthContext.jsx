@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import dataService from '../../utils/dataService';
+import activityService from '../../utils/activityService';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -24,6 +25,17 @@ export const AuthProvider = ({ children }) => {
         const { password: _, ...userWithoutPassword } = userData;
         setUser(userWithoutPassword);
         localStorage.setItem('eco_user', JSON.stringify(userWithoutPassword));
+        
+        // Registrar actividad de login
+        activityService.addActivity(
+          userWithoutPassword.id,
+          activityService.ACTIVITY_TYPES.USER_LOGIN,
+          {
+            userName: userWithoutPassword.name,
+            userRole: userWithoutPassword.role
+          }
+        );
+        
         return { success: true, user: userWithoutPassword };
       } else {
         return { success: false, error: 'Credenciales inválidas' };
@@ -34,6 +46,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Registrar actividad de logout antes de limpiar el usuario
+    if (user?.id) {
+      activityService.addActivity(
+        user.id,
+        activityService.ACTIVITY_TYPES.USER_LOGOUT,
+        {
+          userName: user.name,
+          userRole: user.role
+        }
+      );
+    }
+    
     setUser(null);
     localStorage.removeItem('eco_user');
   };

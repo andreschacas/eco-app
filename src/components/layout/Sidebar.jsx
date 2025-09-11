@@ -50,6 +50,7 @@ const Sidebar = ({ onNavigate, current, user: userProp, onCalendarNavigation, on
           { label: 'Gestión de Proyectos', icon: <FolderOpenIcon />, key: 'admin-projects' },
           { label: 'Gestión de Usuarios', icon: <GroupIcon />, key: 'admin-users' },
           { label: 'Tareas (Kanban)', icon: <AssignmentIcon />, key: 'admin-kanban' },
+          { label: 'Calendario', icon: <CalendarMonthIcon />, key: 'calendar' },
           ...baseItems
         ];
       
@@ -58,6 +59,7 @@ const Sidebar = ({ onNavigate, current, user: userProp, onCalendarNavigation, on
           { label: 'Dashboard', icon: <HomeIcon />, key: 'coordinator-dashboard' },
           { label: 'Mis Proyectos', icon: <FolderOpenIcon />, key: 'coordinator-projects' },
           { label: 'Tareas (Kanban)', icon: <AssignmentIcon />, key: 'coordinator-kanban' },
+          { label: 'Calendario', icon: <CalendarMonthIcon />, key: 'calendar' },
           { label: 'Métricas', icon: <BarChartIcon />, key: 'coordinator-metrics' },
           { label: 'Participantes', icon: <GroupIcon />, key: 'coordinator-participants' },
           ...baseItems
@@ -68,6 +70,7 @@ const Sidebar = ({ onNavigate, current, user: userProp, onCalendarNavigation, on
           { label: 'Dashboard', icon: <HomeIcon />, key: 'participant-dashboard' },
           { label: 'Mis Tareas (Kanban)', icon: <AssignmentIcon />, key: 'participant-kanban' },
           { label: 'Mis Proyectos', icon: <FolderOpenIcon />, key: 'participant-projects' },
+          { label: 'Calendario', icon: <CalendarMonthIcon />, key: 'calendar' },
           ...baseItems
         ];
       
@@ -224,106 +227,6 @@ const Sidebar = ({ onNavigate, current, user: userProp, onCalendarNavigation, on
           ))}
         </List>
 
-        {/* Botón de navegación del calendario - Solo visible cuando estamos en la sección del calendario */}
-        {isCalendarSection && (
-          <Box>
-            <Divider sx={{ mx: 2, my: 2 }} />
-            <Box sx={{ px: 2, mb: 2 }}>
-              <Typography variant="caption" sx={{ 
-                color: '#8B8B8B', 
-                fontSize: 12, 
-                fontWeight: 600, 
-                letterSpacing: 0.5, 
-                fontFamily: 'Poppins, sans-serif',
-                mb: 1,
-                display: 'block'
-              }}>
-                NAVEGACIÓN DEL CALENDARIO
-              </Typography>
-              
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                bgcolor: '#f8f9fa',
-                borderRadius: 2,
-                p: 1.5,
-                border: '1px solid #e0e0e0'
-              }}>
-                <IconButton 
-                  size="small"
-                  onClick={() => handleCalendarNavigation('prev')}
-                  sx={{ 
-                    bgcolor: '#fff',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    '&:hover': { 
-                      bgcolor: '#f5f5f5',
-                      transform: 'scale(1.05)'
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <ChevronLeftIcon fontSize="small" />
-                </IconButton>
-                
-                <Box sx={{ textAlign: 'center', flex: 1, mx: 1 }}>
-                  <Typography variant="body2" sx={{ 
-                    fontWeight: 600, 
-                    fontFamily: 'Poppins, sans-serif',
-                    color: '#333',
-                    fontSize: 13
-                  }}>
-                    {currentDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
-                  </Typography>
-                </Box>
-                
-                <IconButton 
-                  size="small"
-                  onClick={() => handleCalendarNavigation('next')}
-                  sx={{ 
-                    bgcolor: '#fff',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    '&:hover': { 
-                      bgcolor: '#f5f5f5',
-                      transform: 'scale(1.05)'
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <ChevronRightIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              
-              <Box sx={{ mt: 1 }}>
-                <IconButton 
-                  size="small"
-                  onClick={handleToday}
-                  sx={{ 
-                    width: '100%',
-                    bgcolor: GREEN,
-                    color: '#fff',
-                    borderRadius: 2,
-                    py: 1,
-                    '&:hover': { 
-                      bgcolor: '#1f9a1f',
-                      transform: 'translateY(-1px)'
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <TodayIcon fontSize="small" sx={{ mr: 1 }} />
-                  <Typography variant="caption" sx={{ 
-                    fontWeight: 600, 
-                    fontFamily: 'Poppins, sans-serif',
-                    fontSize: 12
-                  }}>
-                    Hoy
-                  </Typography>
-                </IconButton>
-              </Box>
-            </Box>
-          </Box>
-        )}
       </Drawer>
 
       {/* Botón flotante para expandir sidebar cuando está colapsado */}

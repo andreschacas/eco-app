@@ -59,12 +59,12 @@ const projectTasks = [
   }
 ];
 
-const StaticGanttChart = ({ projectId, filterByRole = false }) => {
+const StaticGanttChart = ({ projectId, filterByRole = false, initialDate = null }) => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [hoveredTask, setHoveredTask] = useState(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date('2025-09-01'));
+  const [currentMonth, setCurrentMonth] = useState(initialDate || new Date('2025-09-01'));
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [eventReceived, setEventReceived] = useState(false);
@@ -161,8 +161,17 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
   };
 
   useEffect(() => {
+    console.log('StaticGanttChart - useEffect triggered:', { user: user?.id, projectId, currentMonth: currentMonth.toISOString().split('T')[0] });
     loadTasks();
   }, [user, projectId, currentMonth]);
+
+  // Actualizar el mes cuando cambie initialDate
+  useEffect(() => {
+    if (initialDate) {
+      console.log('StaticGanttChart - initialDate changed:', initialDate.toISOString().split('T')[0]);
+      setCurrentMonth(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
+    }
+  }, [initialDate]);
 
   // Listener para detectar cambios en las tareas
   useEffect(() => {
@@ -229,10 +238,11 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
     try {
       console.log('Gantt - Iniciando carga de tareas con projectId:', projectId);
       
+      const allProjects = dataService.getAll('projects');
+      
       if (projectId) {
         // Cargar tareas reales del proyecto específico
         const userTasks = dataService.getTasksByProject(projectId);
-        const allProjects = dataService.getAll('projects');
         
         console.log('Gantt - Cargando tareas para proyecto ID:', projectId);
         console.log('Gantt - Tareas encontradas en dataService:', userTasks);
@@ -355,8 +365,101 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
           setTasks([]);
         }
       } else {
-        console.log('Gantt - No hay projectId proporcionado');
+        // Cargar todas las tareas de todos los proyectos
+        console.log('Gantt - Cargando todas las tareas de todos los proyectos');
+        const allTasks = dataService.getAll('tasks');
+        
+        console.log('Gantt - Todas las tareas encontradas:', allTasks);
+        console.log('Gantt - Todos los proyectos encontrados:', allProjects);
+        
+        if (allTasks && allTasks.length > 0) {
+          const enrichedTasks = allTasks.map(task => {
+            const project = allProjects.find(p => p.id === task.project_id);
+            console.log('Gantt - Procesando tarea:', task.title, {
+              status: task.status,
+              progress: task.progress,
+              due_date: task.due_date,
+              project: project?.name
+            });
+            
+            // Convertir fechas de string a Date si es necesario
+            let startDate, endDate;
+            
+            // El dataService usa 'due_date' como fecha principal
+            if (task.due_date) {
+              const dueDate = new Date(task.due_date);
+              // Usar due_date como endDate y calcular startDate
+              endDate = dueDate;
+              startDate = new Date(dueDate.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 días antes
+            } else if (task.start_date) {
+              startDate = new Date(task.start_date);
+              endDate = new Date(task.end_date || task.start_date);
+            } else if (task.startDate) {
+              startDate = new Date(task.startDate);
+              endDate = new Date(task.endDate || task.startDate);
+            } else {
+              // Fecha por defecto si no existe
+              startDate = new Date();
+              endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // +7 días
+            }
+            
+            // Calcular progreso basado en el estado
+            const calculatedProgress = getProgressByStatus(task.status || 'Pendiente', task.progress);
+            const taskStatus = task.status || 'Pendiente';
+            
+            const enrichedTask = {
+              id: task.id,
+              name: task.title || task.name || 'Tarea sin nombre',
+              startDate: startDate,
+              endDate: endDate,
+              progress: calculatedProgress,
+              status: taskStatus,
+              projectName: project?.name || 'Sin proyecto',
+              projectColor: project?.color || GREEN,
+              color: getTaskColorByStatus(taskStatus, calculatedProgress)
+            };
+            
+            console.log('Gantt - Tarea enriquecida:', enrichedTask.name, {
+              status: enrichedTask.status,
+              progress: enrichedTask.progress,
+              color: enrichedTask.color,
+              originalProgress: task.progress,
+              calculatedProgress: calculatedProgress
+            });
+            
+            return enrichedTask;
+          });
+          
+          // Filtrar tareas que estén dentro del rango del mes actual
+          const currentMonthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+          const currentMonthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+          
+          console.log('Gantt - Rango del mes actual:', {
+            start: currentMonthStart.toISOString().split('T')[0],
+            end: currentMonthEnd.toISOString().split('T')[0]
+          });
+          
+          const filteredTasks = enrichedTasks.filter(task => {
+            const isInRange = task.startDate <= currentMonthEnd && task.endDate >= currentMonthStart;
+            console.log('Gantt - Tarea filtrada:', task.name, {
+              startDate: task.startDate.toISOString().split('T')[0],
+              endDate: task.endDate.toISOString().split('T')[0],
+              isInRange
+            });
+            return isInRange;
+          });
+          
+          console.log('Gantt - Tareas cargadas para todos los proyectos');
+          console.log('Gantt - Tareas filtradas:', filteredTasks);
+          console.log('Gantt - Rango del mes:', {
+            start: currentMonthStart.toISOString().split('T')[0],
+            end: currentMonthEnd.toISOString().split('T')[0]
+          });
+          setTasks(filteredTasks);
+        } else {
+          console.log('Gantt - No hay tareas en el sistema');
         setTasks([]);
+        }
       }
     } catch (error) {
       console.error('Gantt - Error loading tasks:', error);
@@ -631,14 +734,28 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               style={{
-                padding: '6px 12px',
-                border: '1px solid #ced4da',
+                padding: '8px 12px',
+                border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 fontSize: '0.75rem',
                 fontFamily: 'Poppins, sans-serif',
                 backgroundColor: 'white',
                 color: '#495057',
-                minWidth: '120px'
+                minWidth: '120px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#2AAC26';
+                e.target.style.boxShadow = '0 4px 8px rgba(42, 172, 38, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e0e0e0';
+                e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#2AAC26';
+                e.target.style.outline = 'none';
               }}
             >
               <option value="todos">Todos</option>
@@ -663,14 +780,28 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
               style={{
-                padding: '6px 12px',
-                border: '1px solid #ced4da',
+                padding: '8px 12px',
+                border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 fontSize: '0.75rem',
                 fontFamily: 'Poppins, sans-serif',
                 backgroundColor: 'white',
                 color: '#495057',
-                minWidth: '120px'
+                minWidth: '120px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#2AAC26';
+                e.target.style.boxShadow = '0 4px 8px rgba(42, 172, 38, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#e0e0e0';
+                e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#2AAC26';
+                e.target.style.outline = 'none';
               }}
             >
               <option value="todos">Todas</option>
@@ -684,30 +815,35 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
           <button
             onClick={goToToday}
             style={{
-              padding: '6px 16px',
-              border: '1px solid #ff6b6b',
+              padding: '8px 16px',
+              border: '1px solid #2AAC26',
               borderRadius: '8px',
               fontSize: '0.75rem',
               fontFamily: 'Poppins, sans-serif',
-              backgroundColor: showTodayOnly ? '#ff6b6b' : 'white',
-              color: showTodayOnly ? 'white' : '#ff6b6b',
+              backgroundColor: showTodayOnly ? '#2AAC26' : 'white',
+              color: showTodayOnly ? 'white' : '#2AAC26',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
             onMouseEnter={(e) => {
               if (!showTodayOnly) {
-                e.target.style.backgroundColor = '#ff6b6b';
+                e.target.style.backgroundColor = '#2AAC26';
                 e.target.style.color = 'white';
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0 4px 8px rgba(42, 172, 38, 0.3)';
               }
             }}
             onMouseLeave={(e) => {
               if (!showTodayOnly) {
                 e.target.style.backgroundColor = 'white';
-                e.target.style.color = '#ff6b6b';
+                e.target.style.color = '#2AAC26';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
               }
             }}
           >
@@ -718,24 +854,34 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
           <button
             onClick={clearFilters}
             style={{
-              padding: '6px 12px',
-              border: '1px solid #6c757d',
+              padding: '8px 16px',
+              border: '1px solid #e0e0e0',
               borderRadius: '8px',
               fontSize: '0.75rem',
               fontFamily: 'Poppins, sans-serif',
               backgroundColor: 'white',
-              color: '#6c757d',
+              color: '#666',
               fontWeight: '600',
               cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#6c757d';
-              e.target.style.color = 'white';
+              e.target.style.backgroundColor = '#ffebee';
+              e.target.style.color = '#d32f2f';
+              e.target.style.borderColor = '#d32f2f';
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 8px rgba(211, 47, 47, 0.2)';
             }}
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = 'white';
-              e.target.style.color = '#6c757d';
+              e.target.style.color = '#666';
+              e.target.style.borderColor = '#e0e0e0';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
             }}
           >
             🗑️ Limpiar
@@ -770,9 +916,17 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
               size="small"
               sx={{ 
                 color: '#666',
+                bgcolor: '#f8f9fa',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
                 '&:hover': { 
                   color: '#2AAC26',
-                  bgcolor: 'rgba(42, 172, 38, 0.1)' 
+                  bgcolor: '#e8f5e9',
+                  borderColor: '#2AAC26',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 8px rgba(42, 172, 38, 0.2)'
                 }
               }}
             >
@@ -785,7 +939,12 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
               fontFamily: 'Poppins, sans-serif',
               color: '#333',
               minWidth: '150px',
-              textAlign: 'center'
+              textAlign: 'center',
+              px: 2,
+              py: 1,
+              bgcolor: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0'
             }}>
               {currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </Typography>
@@ -795,9 +954,17 @@ const StaticGanttChart = ({ projectId, filterByRole = false }) => {
               size="small"
               sx={{ 
                 color: '#666',
+                bgcolor: '#f8f9fa',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'all 0.2s ease',
                 '&:hover': { 
                   color: '#2AAC26',
-                  bgcolor: 'rgba(42, 172, 38, 0.1)' 
+                  bgcolor: '#e8f5e9',
+                  borderColor: '#2AAC26',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 8px rgba(42, 172, 38, 0.2)'
                 }
               }}
             >

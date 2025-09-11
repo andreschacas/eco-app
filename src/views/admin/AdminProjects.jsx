@@ -30,10 +30,13 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import dataService from '../../utils/dataService';
+import activityService from '../../utils/activityService';
+import { useAuth } from '../../context/auth/AuthContext';
 
 const GREEN = '#2AAC26';
 
 const AdminProjects = ({ onNavigate }) => {
+  const { user: currentUser } = useAuth();
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -177,9 +180,35 @@ const AdminProjects = ({ onNavigate }) => {
 
       if (editingProject) {
         dataService.update('projects', editingProject.id, formData);
+        
+        // Registrar actividad
+        if (currentUser?.id) {
+          activityService.addActivity(
+            currentUser.id,
+            activityService.ACTIVITY_TYPES.PROJECT_UPDATED,
+            {
+              projectName: formData.name,
+              projectId: editingProject.id
+            }
+          );
+        }
+        
         showSnackbar('Proyecto actualizado exitosamente', 'success');
       } else {
-        dataService.create('projects', formData);
+        const newProject = dataService.create('projects', formData);
+        
+        // Registrar actividad
+        if (currentUser?.id) {
+          activityService.addActivity(
+            currentUser.id,
+            activityService.ACTIVITY_TYPES.PROJECT_CREATED,
+            {
+              projectName: formData.name,
+              projectId: newProject.id
+            }
+          );
+        }
+        
         showSnackbar('Proyecto creado exitosamente', 'success');
       }
 
@@ -192,7 +221,22 @@ const AdminProjects = ({ onNavigate }) => {
 
   const handleDeleteProject = (projectId) => {
     try {
+      const projectToDelete = projects.find(p => p.id === projectId);
+      
       dataService.delete('projects', projectId);
+      
+      // Registrar actividad
+      if (currentUser?.id && projectToDelete) {
+        activityService.addActivity(
+          currentUser.id,
+          activityService.ACTIVITY_TYPES.PROJECT_DELETED,
+          {
+            projectName: projectToDelete.name,
+            projectId: projectId
+          }
+        );
+      }
+      
       showSnackbar('Proyecto eliminado exitosamente', 'success');
       loadData();
     } catch (error) {

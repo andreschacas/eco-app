@@ -33,11 +33,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import dataService from '../../utils/dataService';
+import activityService from '../../utils/activityService';
+import { useAuth } from '../../context/auth/AuthContext';
 import { UserTableSkeleton } from '../../components/common/LoadingSkeleton';
 
 const GREEN = '#2AAC26';
 
 const AdminUsers = ({ onNavigate }) => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -191,6 +194,21 @@ const AdminUsers = ({ onNavigate }) => {
           delete updateData.password; // No actualizar contraseña si está vacía
         }
         dataService.update('users', editingUser.id, updateData);
+        
+        // Registrar actividad
+        if (currentUser?.id) {
+          const role = roles.find(r => r.id === formData.role_id);
+          activityService.addActivity(
+            currentUser.id,
+            activityService.ACTIVITY_TYPES.USER_UPDATED,
+            {
+              userName: formData.name,
+              userRole: role?.name || 'Sin rol',
+              userId: editingUser.id
+            }
+          );
+        }
+        
         showSnackbar('Usuario actualizado exitosamente', 'success');
       } else {
         // Crear nuevo usuario
@@ -212,11 +230,26 @@ const AdminUsers = ({ onNavigate }) => {
         };
         delete userData.position_name; // Remover position_name ya que usamos position_id
 
-        dataService.create('users', {
+        const newUser = dataService.create('users', {
           ...userData,
           active: true,
           avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`
         });
+        
+        // Registrar actividad
+        if (currentUser?.id) {
+          const role = roles.find(r => r.id === formData.role_id);
+          activityService.addActivity(
+            currentUser.id,
+            activityService.ACTIVITY_TYPES.USER_CREATED,
+            {
+              userName: formData.name,
+              userRole: role?.name || 'Sin rol',
+              userId: newUser.id
+            }
+          );
+        }
+        
         showSnackbar('Usuario creado exitosamente', 'success');
       }
 
@@ -229,8 +262,24 @@ const AdminUsers = ({ onNavigate }) => {
 
   const handleDeleteUser = async (userId) => {
     try {
+      const userToDelete = users.find(u => u.id === userId);
+      
       // Eliminación lógica - cambiar estado a inactivo
       dataService.update('users', userId, { active: false });
+      
+      // Registrar actividad
+      if (currentUser?.id && userToDelete) {
+        activityService.addActivity(
+          currentUser.id,
+          activityService.ACTIVITY_TYPES.USER_DEACTIVATED,
+          {
+            userName: userToDelete.name,
+            userRole: userToDelete.role || 'Sin rol',
+            userId: userId
+          }
+        );
+      }
+      
       showSnackbar('Usuario desactivado exitosamente', 'success');
       await loadData();
     } catch (error) {
