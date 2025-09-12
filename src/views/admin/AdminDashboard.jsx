@@ -26,6 +26,22 @@ import ChevronRight from '@mui/icons-material/ChevronRight';
 import dataService from '../../utils/dataService';
 import activityService from '../../utils/activityService';
 import DashboardWidgets from '../../components/dashboard/DashboardWidgets';
+import { 
+  CarbonFootprintWidget, 
+  RenewableEnergyWidget, 
+  GreenProjectsWidget,
+  CarbonCalculatorWidget,
+  RealtimeEmissionsWidget,
+  SDGIndicatorsWidget,
+  ProjectImpactWidget
+} from '../../components/dashboard/EnvironmentalWidgets';
+import { 
+  RealCarbonFootprintWidget, 
+  RealEnergyWidget, 
+  RealGreenProjectsWidget,
+  RealProjectImpactWidget,
+  MetricsCategoryWidget
+} from '../../components/dashboard/RealEnvironmentalWidgets';
 
 const GREEN = '#2AAC26';
 
@@ -583,7 +599,7 @@ const AdminDashboard = ({ onNavigate }) => {
                         </Box>
                         <IconButton
                           size="small"
-                          onClick={() => onNavigate('admin-projects')}
+                          onClick={() => onNavigate('project-detail', project)}
                           aria-label={`Ver detalles del proyecto ${project.name}`}
                           sx={{ 
                             color: GREEN,
@@ -938,124 +954,40 @@ const AdminDashboard = ({ onNavigate }) => {
         </Box>
       </Box>
 
-      {/* Widgets de Sustentabilidad */}
-      <Grid container spacing={3}>
-        {/* Huella de Carbono */}
+      {/* KPIs Ambientales Principales - Conectados a Métricas Reales */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #2AAC26 0%, #1f9a1f 100%)' }}>
-            <CardContent sx={{ color: 'white' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                  Huella de Carbono
-                </Typography>
-                <Box sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: '50%', 
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Typography sx={{ fontSize: '20px' }}>🌱</Typography>
-                </Box>
-              </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
-                2.4 tCO₂
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
-                Reducido este mes
-              </Typography>
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
-                  -15% vs mes anterior
-                </Typography>
-                <TrendingDownIcon sx={{ fontSize: 16, color: '#4caf50' }} />
-              </Box>
-            </CardContent>
-          </Card>
+          <RealCarbonFootprintWidget projects={recentProjects} onNavigate={onNavigate} />
         </Grid>
-
-        {/* Energía Renovable */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' }}>
-            <CardContent sx={{ color: 'white' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                  Energía Renovable
-                </Typography>
-                <Box sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: '50%', 
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Typography sx={{ fontSize: '20px' }}>⚡</Typography>
-                </Box>
-              </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
-                87%
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
-                De energía limpia utilizada
-              </Typography>
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
-                  +5% vs mes anterior
-                </Typography>
-                <TrendingUpIcon sx={{ fontSize: 16, color: '#4caf50' }} />
-              </Box>
-            </CardContent>
-          </Card>
+          <RealEnergyWidget projects={recentProjects} />
         </Grid>
-
-        {/* Proyectos Verdes */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)' }}>
-            <CardContent sx={{ color: 'white' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                  Proyectos Verdes
-                </Typography>
-                <Box sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: '50%', 
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Typography sx={{ fontSize: '20px' }}>🌿</Typography>
-                </Box>
-              </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'Poppins, sans-serif', mb: 1 }}>
-                {stats.totalProjects || 0}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Poppins, sans-serif' }}>
-                Proyectos sustentables activos
-              </Typography>
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="caption" sx={{ opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
-                  {stats.activeProjects || 0} en progreso
-                </Typography>
-                <CheckCircleIcon sx={{ fontSize: 16, color: '#4caf50' }} />
-              </Box>
-            </CardContent>
-          </Card>
+          <RealGreenProjectsWidget projects={recentProjects} />
         </Grid>
       </Grid>
 
       
-      {/* Widgets Section */}
+      {/* Métricas Ambientales Avanzadas */}
       <Box sx={{ mt: 6 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, fontFamily: 'Poppins, sans-serif' }}>
-          Métricas Avanzadas
+          Métricas Ambientales Avanzadas
         </Typography>
-        <DashboardWidgets customizable={true} />
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <RealProjectImpactWidget projects={recentProjects} onNavigate={onNavigate} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <MetricsCategoryWidget projects={recentProjects} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <CarbonCalculatorWidget projects={recentProjects} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <SDGIndicatorsWidget projects={recentProjects} />
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   );

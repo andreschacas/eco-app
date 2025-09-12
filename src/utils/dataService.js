@@ -14,7 +14,12 @@ const STORAGE_KEYS = {
   METRIC_HISTORY: 'eco_metric_history',
   COMMENTS: 'eco_comments',
   ATTACHMENTS: 'eco_attachments',
-  PROJECT_FILES: 'eco_project_files'
+  PROJECT_FILES: 'eco_project_files',
+  BUDGETS: 'eco_budgets',
+  EXPENSES: 'eco_expenses',
+  FINANCIAL_REPORTS: 'eco_financial_reports',
+  RESOURCE_ALLOCATIONS: 'eco_resource_allocations',
+  EXPENSE_CATEGORIES: 'eco_expense_categories'
 };
 
 // Datos iniciales del sistema
@@ -32,6 +37,103 @@ const INITIAL_DATA = {
     { id: 4, name: 'Analista Ambiental' },
     { id: 5, name: 'Investigador' },
     { id: 6, name: 'Consultor' }
+  ],
+
+  expenseCategories: [
+    { id: 1, name: 'Equipos de Medición', icon: '📊', color: '#2196f3' },
+    { id: 2, name: 'Materiales Sustentables', icon: '🌱', color: '#4caf50' },
+    { id: 3, name: 'Certificaciones Ambientales', icon: '🏆', color: '#ff9800' },
+    { id: 4, name: 'Consultoría Especializada', icon: '👥', color: '#9c27b0' },
+    { id: 5, name: 'Transporte Ecológico', icon: '🚗', color: '#00bcd4' },
+    { id: 6, name: 'Energía Renovable', icon: '⚡', color: '#ffeb3b' },
+    { id: 7, name: 'Análisis de Laboratorio', icon: '🧪', color: '#e91e63' },
+    { id: 8, name: 'Sensores IoT', icon: '📡', color: '#795548' },
+    { id: 9, name: 'Capacitación', icon: '🎓', color: '#607d8b' },
+    { id: 10, name: 'Otros', icon: '📦', color: '#9e9e9e' }
+  ],
+
+
+  expenses: [
+    {
+      id: 1,
+      budget_id: 1,
+      project_id: 1,
+      amount: 2500,
+      category_id: 1,
+      description: 'Compra de sensores de CO2 para medición de emisiones',
+      date: '2024-11-15',
+      approved_by: 1,
+      status: 'approved',
+      vendor: 'EcoSensors Corp',
+      receipt_number: 'INV-001-2024'
+    },
+    {
+      id: 2,
+      budget_id: 1,
+      project_id: 1,
+      amount: 1200,
+      category_id: 7,
+      description: 'Análisis de laboratorio para muestras de aire',
+      date: '2024-11-20',
+      approved_by: 1,
+      status: 'approved',
+      vendor: 'LabGreen Solutions',
+      receipt_number: 'LAB-002-2024'
+    },
+    {
+      id: 3,
+      budget_id: 2,
+      project_id: 2,
+      amount: 8500,
+      category_id: 2,
+      description: 'Materiales sustentables para pared verde',
+      date: '2024-11-25',
+      approved_by: 2,
+      status: 'approved',
+      vendor: 'GreenMaterials Inc',
+      receipt_number: 'MAT-003-2024'
+    }
+  ],
+
+  financialReports: [
+    {
+      id: 1,
+      project_id: 1,
+      period: '2024-Q4',
+      total_budget: 50000,
+      total_spent: 12500,
+      variance: 37500,
+      efficiency_metrics: {
+        cost_per_ton_co2: 125,
+        roi_environmental: 85,
+        budget_utilization: 25
+      },
+      generated_date: '2024-12-15',
+      generated_by: 1
+    }
+  ],
+
+  resourceAllocations: [
+    {
+      id: 1,
+      project_id: 1,
+      resource_type: 'Sensores IoT',
+      allocated_amount: 10000,
+      used_amount: 2500,
+      cost_per_unit: 500,
+      efficiency_rating: 95,
+      allocation_date: '2024-01-15'
+    },
+    {
+      id: 2,
+      project_id: 2,
+      resource_type: 'Materiales Verdes',
+      allocated_amount: 25000,
+      used_amount: 8500,
+      cost_per_unit: 50,
+      efficiency_rating: 88,
+      allocation_date: '2024-02-01'
+    }
   ],
 
   users: [
@@ -516,6 +618,197 @@ const INITIAL_DATA = {
 
   attachments: [
     // Los adjuntos se crearán dinámicamente por los usuarios
+  ],
+
+  // Entidades financieras
+  expenseCategories: [
+    { id: 1, name: 'Equipos de medición', icon: '📊', color: '#2196f3' },
+    { id: 2, name: 'Materiales sustentables', icon: '🌱', color: '#4caf50' },
+    { id: 3, name: 'Certificaciones ambientales', icon: '🏆', color: '#ff9800' },
+    { id: 4, name: 'Consultoría especializada', icon: '👥', color: '#9c27b0' },
+    { id: 5, name: 'Transporte ecológico', icon: '🚗', color: '#00bcd4' },
+    { id: 6, name: 'Energía renovable', icon: '⚡', color: '#ffeb3b' },
+    { id: 7, name: 'Análisis de laboratorio', icon: '🧪', color: '#f44336' },
+    { id: 8, name: 'Capacitación', icon: '🎓', color: '#795548' },
+    { id: 9, name: 'Tecnología', icon: '💻', color: '#607d8b' },
+    { id: 10, name: 'Otros', icon: '📦', color: '#9e9e9e' }
+  ],
+
+  budgets: [
+    {
+      id: 1,
+      project_id: 1,
+      total_amount: 50000,
+      allocated_amount: 45000,
+      spent_amount: 12500,
+      remaining_amount: 32500,
+      currency: 'USD',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      project_id: 2,
+      total_amount: 75000,
+      allocated_amount: 70000,
+      spent_amount: 28000,
+      remaining_amount: 42000,
+      currency: 'USD',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+  ],
+
+  expenses: [
+    {
+      id: 1,
+      budget_id: 1,
+      project_id: 1,
+      task_id: null,
+      amount: 2500,
+      category: 'Equipos de medición',
+      description: 'Compra de sensores de calidad del aire',
+      date: '2025-08-15',
+      approved_by: 1,
+      status: 'approved',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      budget_id: 1,
+      project_id: 1,
+      task_id: null,
+      amount: 1800,
+      category: 'Consultoría especializada',
+      description: 'Análisis de laboratorio para muestras de CO2',
+      date: '2025-08-20',
+      approved_by: 1,
+      status: 'approved',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 3,
+      budget_id: 2,
+      project_id: 2,
+      task_id: null,
+      amount: 15000,
+      category: 'Materiales sustentables',
+      description: 'Plantas y sistema de riego para pared verde',
+      date: '2025-09-10',
+      approved_by: 1,
+      status: 'approved',
+      created_at: new Date().toISOString()
+    }
+  ],
+
+  financialReports: [
+    {
+      id: 1,
+      project_id: 1,
+      period: '2025-08',
+      total_budget: 50000,
+      total_spent: 12500,
+      variance: 37500,
+      efficiency_metrics: {
+        cost_per_ton_co2: 125,
+        energy_savings_per_dollar: 2.5,
+        roi_percentage: 85
+      },
+      generated_date: new Date().toISOString()
+    },
+    {
+      id: 2,
+      project_id: 2,
+      period: '2025-09',
+      total_budget: 75000,
+      total_spent: 28000,
+      variance: 47000,
+      efficiency_metrics: {
+        cost_per_sqm_green: 280,
+        temperature_reduction_per_dollar: 0.15,
+        roi_percentage: 92
+      },
+      generated_date: new Date().toISOString()
+    }
+  ],
+
+  resourceAllocations: [
+    {
+      id: 1,
+      project_id: 1,
+      resource_type: 'Sensores IoT',
+      allocated_amount: 8000,
+      used_amount: 2500,
+      cost_per_unit: 500,
+      efficiency_rating: 85,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      project_id: 2,
+      resource_type: 'Plantas Sustentables',
+      allocated_amount: 12000,
+      used_amount: 15000,
+      cost_per_unit: 25,
+      efficiency_rating: 78,
+      created_at: new Date().toISOString()
+    }
+  ],
+
+  financialReports: [
+    {
+      id: 1,
+      project_id: 1,
+      period: '2025-08',
+      total_budget: 50000,
+      total_spent: 12500,
+      variance: 37500,
+      efficiency_metrics: {
+        budget_compliance: 75,
+        cost_per_ton_co2: 125,
+        roi_environmental: 15.2
+      },
+      generated_date: new Date().toISOString()
+    },
+    {
+      id: 2,
+      project_id: 2,
+      period: '2025-09',
+      total_budget: 75000,
+      total_spent: 28000,
+      variance: 47000,
+      efficiency_metrics: {
+        budget_compliance: 62.7,
+        cost_per_ton_co2: 93,
+        roi_environmental: 18.5
+      },
+      generated_date: new Date().toISOString()
+    }
+  ],
+
+  resourceAllocations: [
+    {
+      id: 1,
+      project_id: 1,
+      resource_type: 'Equipos de medición',
+      allocated_amount: 15000,
+      used_amount: 8500,
+      cost_per_unit: 850,
+      efficiency_rating: 8.5,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      project_id: 2,
+      resource_type: 'Materiales sustentables',
+      allocated_amount: 25000,
+      used_amount: 18500,
+      cost_per_unit: 925,
+      efficiency_rating: 9.2,
+      created_at: new Date().toISOString()
+    }
   ]
 };
 
@@ -1009,6 +1302,411 @@ class DataService {
     const filteredFiles = files.filter(file => file.id !== parseInt(fileId));
     this.saveAll('project_files', filteredFiles);
     return true;
+  }
+
+  // ==================== MÉTODOS FINANCIEROS ====================
+
+  // Métodos para presupuestos
+  getBudgetsByProject(projectId) {
+    const budgets = this.getAll('budgets') || [];
+    return budgets.filter(budget => budget.project_id === parseInt(projectId));
+  }
+
+  // Métodos para gastos
+  getExpensesByProject(projectId) {
+    const expenses = this.getAll('expenses') || [];
+    return expenses.filter(expense => expense.project_id === parseInt(projectId));
+  }
+
+  getExpensesByBudget(budgetId) {
+    const expenses = this.getAll('expenses') || [];
+    return expenses.filter(expense => expense.budget_id === parseInt(budgetId));
+  }
+
+
+  approveExpense(expenseId, approvedBy) {
+    const expenses = this.getAll('expenses') || [];
+    const expenseIndex = expenses.findIndex(expense => expense.id === parseInt(expenseId));
+    
+    if (expenseIndex !== -1) {
+      expenses[expenseIndex] = {
+        ...expenses[expenseIndex],
+        status: 'approved',
+        approved_by: approvedBy,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      this.saveAll('expenses', expenses);
+      return expenses[expenseIndex];
+    }
+    return null;
+  }
+
+  // Métodos para reportes financieros
+  generateFinancialReport(projectId, period = 'monthly') {
+    const budget = this.getBudgetsByProject(projectId)[0];
+    const expenses = this.getExpensesByProject(projectId);
+    
+    if (!budget) return null;
+    
+    const totalSpent = expenses
+      .filter(expense => expense.status === 'approved')
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    
+    const variance = budget.total_amount - totalSpent;
+    const efficiency = budget.total_amount > 0 ? ((budget.total_amount - totalSpent) / budget.total_amount) * 100 : 0;
+    
+    const report = {
+      id: Date.now(),
+      project_id: parseInt(projectId),
+      period,
+      total_budget: budget.total_amount,
+      total_spent: totalSpent,
+      variance,
+      efficiency_percentage: efficiency,
+      expenses_count: expenses.length,
+      approved_expenses: expenses.filter(e => e.status === 'approved').length,
+      pending_expenses: expenses.filter(e => e.status === 'pending').length,
+      generated_at: new Date().toISOString()
+    };
+    
+    // Guardar el reporte
+    const reports = this.getAll('financial_reports') || [];
+    reports.push(report);
+    this.saveAll('financial_reports', reports);
+    
+    return report;
+  }
+
+  getFinancialReportsByProject(projectId) {
+    const reports = this.getAll('financial_reports') || [];
+    return reports.filter(report => report.project_id === parseInt(projectId));
+  }
+
+  // Métodos para asignación de recursos
+  getResourceAllocationsByProject(projectId) {
+    const allocations = this.getAll('resource_allocations') || [];
+    return allocations.filter(allocation => allocation.project_id === parseInt(projectId));
+  }
+
+  createResourceAllocation(allocationData) {
+    const allocations = this.getAll('resource_allocations') || [];
+    const newAllocation = {
+      id: Date.now(),
+      ...allocationData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    allocations.push(newAllocation);
+    this.saveAll('resource_allocations', allocations);
+    return newAllocation;
+  }
+
+  // Métodos de utilidad financiera
+  getBudgetUtilizationPercentage(budgetId) {
+    const budget = this.getById('budgets', budgetId);
+    if (!budget || budget.total_amount === 0) return 0;
+    
+    const expenses = this.getExpensesByBudget(budgetId);
+    const totalSpent = expenses
+      .filter(expense => expense.status === 'approved')
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    
+    return Math.min((totalSpent / budget.total_amount) * 100, 100);
+  }
+
+  getExpensesByCategory(projectId) {
+    const expenses = this.getExpensesByProject(projectId);
+    const categories = {};
+    
+    expenses.forEach(expense => {
+      if (!categories[expense.category]) {
+        categories[expense.category] = 0;
+      }
+      categories[expense.category] += expense.amount;
+    });
+    
+    return categories;
+  }
+
+  // Método para verificar alertas de presupuesto
+  checkBudgetAlerts(projectId) {
+    const budgets = this.getBudgetsByProject(projectId);
+    const alerts = [];
+    
+    budgets.forEach(budget => {
+      const utilization = this.getBudgetUtilizationPercentage(budget.id);
+      
+      if (utilization >= 90) {
+        alerts.push({
+          type: 'critical',
+          message: `Presupuesto crítico: ${utilization.toFixed(1)}% utilizado`,
+          budget_id: budget.id
+        });
+      } else if (utilization >= 75) {
+        alerts.push({
+          type: 'warning',
+          message: `Presupuesto alto: ${utilization.toFixed(1)}% utilizado`,
+          budget_id: budget.id
+        });
+      }
+    });
+    
+    return alerts;
+  }
+
+  // ==================== MÉTODOS FINANCIEROS ====================
+
+  // Métodos para Budgets
+  createBudget(budgetData) {
+    const budgets = this.getAll('budgets');
+    const newBudget = {
+      id: Date.now(),
+      ...budgetData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    budgets.push(newBudget);
+    this.saveAll('budgets', budgets);
+    return newBudget;
+  }
+
+  updateBudget(budgetId, budgetData) {
+    const budgets = this.getAll('budgets');
+    const index = budgets.findIndex(budget => budget.id === budgetId);
+    
+    if (index !== -1) {
+      budgets[index] = {
+        ...budgets[index],
+        ...budgetData,
+        updated_at: new Date().toISOString()
+      };
+      this.saveAll('budgets', budgets);
+      return budgets[index];
+    }
+    return null;
+  }
+
+  getBudgetByProject(projectId) {
+    const budgets = this.getAll('budgets');
+    return budgets.find(budget => budget.project_id === projectId);
+  }
+
+  getBudgetsByProject(projectId) {
+    const budgets = this.getAll('budgets');
+    return budgets.filter(budget => budget.project_id === projectId);
+  }
+
+  // Métodos para Expenses
+  createExpense(expenseData) {
+    const expenses = this.getAll('expenses');
+    const newExpense = {
+      id: Date.now(),
+      ...expenseData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    expenses.push(newExpense);
+    this.saveAll('expenses', expenses);
+    
+    // Actualizar el presupuesto
+    this.updateBudgetSpent(newExpense.budget_id, newExpense.amount);
+    
+    return newExpense;
+  }
+
+  updateExpense(expenseId, expenseData) {
+    const expenses = this.getAll('expenses');
+    const index = expenses.findIndex(expense => expense.id === expenseId);
+    
+    if (index !== -1) {
+      const oldAmount = expenses[index].amount;
+      expenses[index] = {
+        ...expenses[index],
+        ...expenseData,
+        updated_at: new Date().toISOString()
+      };
+      
+      this.saveAll('expenses', expenses);
+      
+      // Actualizar presupuesto si cambió el monto
+      if (oldAmount !== expenseData.amount) {
+        const difference = expenseData.amount - oldAmount;
+        this.updateBudgetSpent(expenses[index].budget_id, difference);
+      }
+      
+      return expenses[index];
+    }
+    return null;
+  }
+
+  getExpensesByProject(projectId) {
+    const expenses = this.getAll('expenses');
+    return expenses.filter(expense => expense.project_id === projectId);
+  }
+
+  getExpensesByBudget(budgetId) {
+    const expenses = this.getAll('expenses');
+    return expenses.filter(expense => expense.budget_id === budgetId);
+  }
+
+  getExpensesByCategory(category) {
+    const expenses = this.getAll('expenses');
+    return expenses.filter(expense => expense.category === category);
+  }
+
+  // Métodos para Financial Reports
+  createFinancialReport(reportData) {
+    const reports = this.getAll('financial_reports');
+    const newReport = {
+      id: Date.now(),
+      ...reportData,
+      generated_at: new Date().toISOString()
+    };
+    
+    reports.push(newReport);
+    this.saveAll('financial_reports', reports);
+    return newReport;
+  }
+
+  getFinancialReportsByProject(projectId) {
+    const reports = this.getAll('financial_reports');
+    return reports.filter(report => report.project_id === projectId);
+  }
+
+  // Métodos para Resource Allocations
+  createResourceAllocation(allocationData) {
+    const allocations = this.getAll('resource_allocations');
+    const newAllocation = {
+      id: Date.now(),
+      ...allocationData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    allocations.push(newAllocation);
+    this.saveAll('resource_allocations', allocations);
+    return newAllocation;
+  }
+
+  getResourceAllocationsByProject(projectId) {
+    const allocations = this.getAll('resource_allocations');
+    return allocations.filter(allocation => allocation.project_id === projectId);
+  }
+
+  // Métodos auxiliares
+  updateBudgetSpent(budgetId, amount) {
+    const budgets = this.getAll('budgets');
+    const budget = budgets.find(b => b.id === budgetId);
+    
+    if (budget) {
+      budget.spent_amount += amount;
+      budget.remaining_amount = budget.allocated_amount - budget.spent_amount;
+      budget.updated_at = new Date().toISOString();
+      
+      this.saveAll('budgets', budgets);
+      
+      // Enviar notificación si el presupuesto está cerca del límite
+      this.checkBudgetAlerts(budget);
+    }
+  }
+
+  checkBudgetAlerts(budget) {
+    const percentage = (budget.spent_amount / budget.allocated_amount) * 100;
+    
+    if (percentage >= 90) {
+      const project = this.getById('projects', budget.project_id);
+      const users = this.getProjectParticipants(budget.project_id);
+      
+      users.forEach(user => {
+        notificationService.create({
+          type: 'budget_alert',
+          title: 'Alerta de Presupuesto',
+          message: `El proyecto "${project.name}" ha utilizado el ${percentage.toFixed(1)}% de su presupuesto`,
+          project_id: budget.project_id,
+          project_name: project.name,
+          user_id: user.id,
+          priority: percentage >= 100 ? 'urgent' : 'high',
+          sender_name: 'Sistema'
+        });
+      });
+    }
+  }
+
+  // Métodos de análisis financiero
+  getProjectFinancialSummary(projectId) {
+    const budget = this.getBudgetByProject(projectId);
+    const expenses = this.getExpensesByProject(projectId);
+    
+    if (!budget) {
+      return null;
+    }
+
+    const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const budgetCompliance = (totalSpent / budget.allocated_amount) * 100;
+    
+    const expensesByCategory = expenses.reduce((acc, expense) => {
+      const categoryKey = expense.category_name || expense.category || 'Sin categoría';
+      acc[categoryKey] = (acc[categoryKey] || 0) + expense.amount;
+      return acc;
+    }, {});
+
+    return {
+      budget,
+      totalSpent,
+      remaining: budget.allocated_amount - totalSpent,
+      budgetCompliance,
+      expensesByCategory,
+      expenseCount: expenses.length
+    };
+  }
+
+  getFinancialDashboardData() {
+    const budgets = this.getAll('budgets');
+    const expenses = this.getAll('expenses');
+    
+    const totalBudget = budgets.reduce((sum, budget) => sum + budget.allocated_amount, 0);
+    const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalRemaining = totalBudget - totalSpent;
+    
+    const monthlyExpenses = this.getMonthlyExpenses();
+    const expensesByCategory = this.getExpensesByCategory();
+    
+    return {
+      totalBudget,
+      totalSpent,
+      totalRemaining,
+      monthlyExpenses,
+      expensesByCategory,
+      budgetCount: budgets.length,
+      expenseCount: expenses.length
+    };
+  }
+
+  getMonthlyExpenses() {
+    const expenses = this.getAll('expenses');
+    const monthly = {};
+    
+    expenses.forEach(expense => {
+      const month = new Date(expense.date).toISOString().slice(0, 7); // YYYY-MM
+      monthly[month] = (monthly[month] || 0) + expense.amount;
+    });
+    
+    return monthly;
+  }
+
+  getExpensesByCategory() {
+    const expenses = this.getAll('expenses');
+    const byCategory = {};
+    
+    expenses.forEach(expense => {
+      byCategory[expense.category] = (byCategory[expense.category] || 0) + expense.amount;
+    });
+    
+    return byCategory;
   }
 }
 

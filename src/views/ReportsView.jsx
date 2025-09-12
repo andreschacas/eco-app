@@ -97,7 +97,12 @@ const ReportsView = () => {
         t.due_date && new Date(t.due_date) < new Date() && t.status !== 'Completada'
       ).length;
 
-      const avgMetricProgress = metrics.length > 0 ? 
+      // Obtener información financiera del proyecto
+      const financialSummary = dataService.getProjectFinancialSummary(selectedProject);
+      const budget = dataService.getBudgetByProject(selectedProject);
+      const projectExpenses = dataService.getExpensesByProject(selectedProject);
+
+      const avgMetricProgress = metrics.length > 0 ?
         Math.round(metrics.reduce((acc, m) => acc + (m.current_value / m.target_value * 100), 0) / metrics.length) : 0;
 
       setReportData({
@@ -105,6 +110,9 @@ const ReportsView = () => {
         tasks,
         participants,
         metrics,
+        budget,
+        financialSummary,
+        projectExpenses,
         stats: {
           totalTasks: tasks.length,
           completedTasks: tasksByStatus['Completada'],
@@ -451,6 +459,81 @@ const ReportsView = () => {
           </Card>
         </Grid>
       </Grid>
+
+          {/* Financial Section */}
+          {reportData.budget && (
+            <Grid container spacing={3} sx={{ mt: 2 }}>
+              <Grid item xs={12}>
+                <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, fontFamily: 'Poppins, sans-serif' }}>
+                      📊 Información Financiera
+                    </Typography>
+                    
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={4}>
+                        <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#e8f5e9', borderRadius: 2 }}>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: GREEN, fontFamily: 'Poppins, sans-serif' }}>
+                            ${reportData.budget.allocated_amount?.toLocaleString()}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                            Presupuesto Asignado
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={4}>
+                        <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#ffebee', borderRadius: 2 }}>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: '#f44336', fontFamily: 'Poppins, sans-serif' }}>
+                            ${reportData.financialSummary?.totalSpent?.toLocaleString()}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                            Total Gastado
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={4}>
+                        <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#e3f2fd', borderRadius: 2 }}>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: '#2196f3', fontFamily: 'Poppins, sans-serif' }}>
+                            {reportData.financialSummary?.budgetCompliance?.toFixed(1)}%
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                            Cumplimiento Presupuestal
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {reportData.projectExpenses && reportData.projectExpenses.length > 0 && (
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, fontFamily: 'Poppins, sans-serif' }}>
+                          Últimos Gastos Registrados
+                        </Typography>
+                        <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+                          {reportData.projectExpenses.slice(0, 5).map((expense) => (
+                            <Box key={expense.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #eee' }}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'Poppins, sans-serif' }}>
+                                  {expense.description}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#666', fontFamily: 'Poppins, sans-serif' }}>
+                                  {new Date(expense.date).toLocaleDateString()}
+                                </Typography>
+                              </Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#f44336', fontFamily: 'Poppins, sans-serif' }}>
+                                -${expense.amount?.toLocaleString()}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          )}
         </>
       ) : (
         <Box sx={{ textAlign: 'center', py: 6 }}>

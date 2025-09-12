@@ -42,10 +42,12 @@ import ImageIcon from '@mui/icons-material/Image';
 import DownloadIcon from '@mui/icons-material/Download';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import dataService from '../../utils/dataService';
 import KanbanBoardNew from '../../components/kanban/KanbanBoardNew';
 import StaticGanttChart from '../../components/gantt/StaticGanttChart';
 import ProjectChat from '../../components/chat/ProjectChat';
+import ProjectFinancialTab from '../../components/financial/ProjectFinancialTab';
 import { useAuth } from '../../context/auth/AuthContext';
 
 const GREEN = '#2AAC26';
@@ -484,6 +486,11 @@ const ProjectDetail = ({ project, onNavigate }) => {
             <Tab 
               icon={<CalendarTodayIcon />} 
               label="Calendario" 
+              sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
+            />
+            <Tab 
+              icon={<AccountBalanceWalletIcon />} 
+              label="Financiero" 
               sx={{ textTransform: 'none', fontFamily: 'Poppins, sans-serif' }}
             />
           </Tabs>
@@ -978,9 +985,16 @@ const ProjectDetail = ({ project, onNavigate }) => {
         </TabPanel>
 
         {/* Calendar Tab - Gantt Chart */}
-                <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={4}>
           <Box sx={{ height: '100vh', overflow: 'hidden' }}>
             <StaticGanttChart projectId={project.id} filterByRole={false} />
+          </Box>
+        </TabPanel>
+
+        {/* Financial Tab */}
+        <TabPanel value={activeTab} index={5}>
+          <Box sx={{ p: 3 }}>
+            <ProjectFinancialTab projectId={currentProject.id} />
           </Box>
         </TabPanel>
       </Card>
